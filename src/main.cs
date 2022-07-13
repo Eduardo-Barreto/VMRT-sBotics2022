@@ -1,14 +1,12 @@
 import("config/createObjects.cs");
 import("routines/lineFollower.cs");
 
-double startTime;
 void setup()
 {
     robot.locked = false;
     IO.Timestamp = false;
     IO.ClearWrite();
     IO.ClearPrint();
-    startTime = Time.Timestamp;
 }
 
 
@@ -23,6 +21,7 @@ async Task Main()
     for (; ; )
     {
         loop();
-        await Task.Delay(50);
+        await timer.delay();
     }
 }
+

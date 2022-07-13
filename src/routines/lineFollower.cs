@@ -1,6 +1,24 @@
 double error, lastError, P, D, PD;
 int targetPower = 450;
+int turnPower = 500;
 long counter = 0;
+byte blackTreshold = 100;
+
+byte centerRightLight; // Valor lido do sensor de luz do meio da direita
+byte centerLeftLight;  // Valor lido do sensor de luz do meio da esquerda
+byte rightLight;       // Valor lido do sensor de luz da direita
+byte leftLight;        // Valor lido do sensor de luz da esquerda
+byte borderRightLight; // Valor lido do sensor de luz da borda da direita
+byte borderLeftLight;  // Valor lido do sensor de luz da borda da esquerda
+bool rightGreen;       // Indica se existe verde na direita
+bool leftGreen;        // Indica se existe verde na esquerda
+
+void readColors(){
+    leftLight           = (byte)(lineSensors[0].light);
+    centerLeftLight     = (byte)(lineSensors[1].light);
+    centerRightLight    = (byte)(lineSensors[3].light);
+    rightLight          = (byte)(lineSensors[4].light);
+}
 
 void runPD()
 {
@@ -18,20 +36,21 @@ void runPD()
 
 }
 
-byte sens = 15;
-async void runLineFollower()
+void runLineFollower()
 {
-    if ((lineSensors[1].light > lineSensors[3].light + sens) || (lineSensors[0].light > lineSensors[4].light + sens))
-    {
-        robot.move(-500, 500);
-    }
-    else if ((lineSensors[3].light > lineSensors[1].light + sens) || (lineSensors[4].light > lineSensors[0].light + sens))
+    readColors();
+    IO.PrintLine(centerLeftLight.ToString() + "\t" + centerRightLight.ToString());
 
-    {
-        robot.move(500, -500);
+    if(leftLight < blackTreshold){
+        turnPower = -500;
     }
-    else
-    {
-        robot.moveStraight(500);
+    if(rightLight < blackTreshold){
+        turnPower = 500;
     }
+    else{
+        robot.moveStraight(targetPower);
+        return;
+    }
+
+    robot.move(turnPower, -turnPower);
 }

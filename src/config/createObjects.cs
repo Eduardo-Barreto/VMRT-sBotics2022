@@ -1,5 +1,9 @@
-import("config/Classes/servo.cs");
+public delegate void ActionHandler();
 
+import("config/Classes/timer.cs");
+myTimer timer = new myTimer();
+
+import("config/Classes/servo.cs");
 motor leftMotor = new motor("leftMotor");
 motor rightMotor = new motor("rightMotor");
 
