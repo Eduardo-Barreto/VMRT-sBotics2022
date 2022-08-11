@@ -2,22 +2,27 @@
 /// Gerencia a base do robô
 /// </summary>
 
-public class robotBase
+public class myRobot
 {
     /// <summary>
     /// Motores da base do robô.
     /// </summary>
-    private motor leftMotor, rightMotor;
+    private motor leftMotor;
+    private motor rightMotor;
+    private motor frontLeftMotor;
+    private motor frontRightMotor;
 
     /// <summary>
     /// Construtor da classe.
     /// </summary>
     /// <param name="leftMotorName">(String) Nome do motor esquerdo.</param>
     /// <param name="rightMotorName">(String) Nome do motor direito.</param>
-    public robotBase(string leftMotorName, string rightMotorName)
+    public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName)
     {
         this.leftMotor = new motor(leftMotorName);
         this.rightMotor = new motor(rightMotorName);
+        this.frontLeftMotor = new motor(frontLeftMotorName);
+        this.frontRightMotor = new motor(frontRightMotorName);
     }
 
     /// <summary>
@@ -25,12 +30,24 @@ public class robotBase
     /// </summary>
     public bool locked
     {
-        get => (leftMotor.locked || rightMotor.locked);
+        get => (leftMotor.locked || rightMotor.locked || frontLeftMotor.locked || frontRightMotor.locked);
         set
         {
             leftMotor.locked = value;
             rightMotor.locked = value;
+            frontLeftMotor.locked = value;
+            frontRightMotor.locked = value;
         }
+    }
+
+    public double leftVelocity{
+        get => leftMotor.velocity;
+        set => leftMotor.velocity = value;
+    }
+
+    public double rightVelocity{
+        get => rightMotor.velocity;
+        set => rightMotor.velocity = value;
     }
 
     /// <summary>
@@ -43,9 +60,11 @@ public class robotBase
     /// <param name="forceUnlock">(bool) Força o destravamento dos motores se verdadeiro</param>
     public void move(double leftVelocity, double rightVelocity, double leftForce = 500, double rightForce = 500, bool forceUnlock = true)
     {
-        this.locked = !forceUnlock;
+        locked = !forceUnlock;
         leftMotor.run(leftVelocity, leftForce);
+        frontLeftMotor.run(leftVelocity, leftForce);
         rightMotor.run(rightVelocity, rightForce);
+        frontRightMotor.run(rightVelocity, rightForce);
     }
 
     /// <summary>
@@ -55,7 +74,7 @@ public class robotBase
     /// <param name="force">(double) Força do robô na curva.</param>
     public void turn(double velocity, double force = 500)
     {
-        this.move(velocity, -velocity, force, force);
+        move(velocity, -velocity, force, force);
     }
 
     /// <summary>
@@ -65,7 +84,7 @@ public class robotBase
     /// <param name="force">(double) Força do robô em linha reta.</param>
     public void moveStraight(double velocity, double force = 500)
     {
-        this.move(velocity, velocity, force, force);
+        move(velocity, velocity, force, force);
     }
 
     /// <summary>
@@ -73,10 +92,24 @@ public class robotBase
     /// </summary>
     /// <param name="time">(int) Tempo para ficar parado.</param>
     /// <param name="lock">(bool) Indica se deve travar os motores após o movimento.</param>
-    public void stop(int time = 50, bool _lock = true)
+    public async Task stop(int time = 50, bool _lock = true)
     {
-        this.move(0, 0);
-        this.locked = _lock;
+        move(-leftVelocity, -rightVelocity);
+        await timer.delay();
+        move(0, 0);
+        locked = _lock;
+        await timer.delay(time);
+        locked = !_lock;
+    }
+
+    public async Task moveTime(double leftVelocity, double rightVelocity, int time = 50, double leftForce = 500, double rightForce = 500){
+        long timeout = timer.current + time;
+        while (timer.current < timeout)
+        {
+            move(leftVelocity, rightVelocity, leftForce, rightForce);
+            await timer.delay();
+        }
+        stop();
     }
 
     /// <summary>
@@ -85,15 +118,16 @@ public class robotBase
     /// <param name="velocity">(double) Velocidade do robô em linha reta.</param>
     /// <param name="force">(double) Força do robô em linha reta.</param>
     /// <param name="time">(int) Tempo para o robô ficar em linha reta.</param>
-    public void moveStraightTime(double velocity, double force = 500, int time = 50)
+    public async Task moveStraightTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
         {
-            this.moveStraight(velocity, force);
-            timer.delay();
+            moveStraight(velocity, force);
+            await timer.delay();
         }
-        this.stop();
+        if(stopAfter)
+            stop();
     }
 
     /// <summary>
@@ -102,15 +136,16 @@ public class robotBase
     /// <param name="velocity">(double) Velocidade do robô em curva.</param>
     /// <param name="force">(double) Força do robô em curva.</param>
     /// <param name="time">(int) Tempo para o robô ficar em curva.</param>
-    public void turnTime(double velocity, double force = 500, int time = 50)
+    public async Task turnTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
         {
-            this.turn(velocity, force);
-            timer.delay();
+            turn(velocity, force);
+            await timer.delay();
         }
-        this.stop();
+        if(stopAfter)
+            stop();
     }
 
 }
