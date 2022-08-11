@@ -6,23 +6,27 @@ public delegate void ActionHandler();
 /// Gerencia o tempo.
 /// </summary>
 
-public class myTimer{
+public static class timer{
     /// <summary>
     /// Armazena o tempo inicial do robô em milissegundos
     /// </summary>
-    public long startTime;
+    public static long startTime;
 
-    /// <summary>
+    /* /// <summary>
     /// Construtor da classe
     /// </summary>
-    public myTimer(){
-        this.startTime = this.currentUnparsed;
+    public static customTimer(int _startTime = 0){
+        startTime = currentUnparsed + _startTime;
+    } */
+
+    public static void init(){
+        startTime = currentUnparsed;
     }
 
     /// <summary>
     /// Tempo atual em milissegundos desde 1970
     /// </summary>
-    public long currentUnparsed{
+    public static long currentUnparsed{
         get{
             return DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
@@ -31,9 +35,9 @@ public class myTimer{
     /// <summary>
     /// Tempo atual em milissegundos desde o início da rotina
     /// </summary>
-    public long current{
+    public static long current{
         get{
-            return this.currentUnparsed - this.startTime;
+            return currentUnparsed - startTime;
         }
     }
 
@@ -41,15 +45,15 @@ public class myTimer{
     /// Reseta o timer atual
     /// </summary>
     /// <param name="_startTime">(long) Valor alvo para resetar o timer</param>
-    public void resetTimer(long _startTime = 0){
-        this.startTime = this.current + _startTime;
+    public static void resetTimer(long _startTime = 0){
+        startTime = current + _startTime;
     }
 
     /// <summary>
     /// Espera um tempo em milissegundos
     /// </summary>
     /// <param name="milliseconds">(int) Tempo a esperar</param>
-    public async Task delay(int milliseconds = 50){
+    public static async Task delay(int milliseconds = 50){
         await Time.Delay(milliseconds);
     }
 
@@ -58,15 +62,15 @@ public class myTimer{
     /// </summary>
     /// <param name="milliseconds">(int) Tempo a esperar</param>
     /// <param name="doWhileWait">(função) Ação para fazer enquanto espera</param>
-    public void delay(int milliseconds, ActionHandler doWhileWait){
-        long timeout = this.current + (milliseconds/50);
+    public static async Task delay(int milliseconds, ActionHandler doWhileWait){
+        long timeout = current + milliseconds;
         while(current < timeout){
             doWhileWait();
-            this.delay();
+            await delay();
         }
     }
 }
-myTimer timer = new myTimer();
+
 
 
 /// <summary>
@@ -141,28 +145,35 @@ public class motor
 }
 motor leftMotor = new motor("leftMotor");
 motor rightMotor = new motor("rightMotor");
+motor frontLeftMotor = new motor("frontLeftMotor");
+motor frontRightMotor = new motor("frontRightMotor");
 
 
 /// <summary>
 /// Gerencia a base do robô
 /// </summary>
 
-public class robotBase
+public class myRobot
 {
     /// <summary>
     /// Motores da base do robô.
     /// </summary>
-    private motor leftMotor, rightMotor;
+    private motor leftMotor;
+    private motor rightMotor;
+    private motor frontLeftMotor;
+    private motor frontRightMotor;
 
     /// <summary>
     /// Construtor da classe.
     /// </summary>
     /// <param name="leftMotorName">(String) Nome do motor esquerdo.</param>
     /// <param name="rightMotorName">(String) Nome do motor direito.</param>
-    public robotBase(string leftMotorName, string rightMotorName)
+    public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName)
     {
         this.leftMotor = new motor(leftMotorName);
         this.rightMotor = new motor(rightMotorName);
+        this.frontLeftMotor = new motor(frontLeftMotorName);
+        this.frontRightMotor = new motor(frontRightMotorName);
     }
 
     /// <summary>
@@ -170,12 +181,24 @@ public class robotBase
     /// </summary>
     public bool locked
     {
-        get => (leftMotor.locked || rightMotor.locked);
+        get => (leftMotor.locked || rightMotor.locked || frontLeftMotor.locked || frontRightMotor.locked);
         set
         {
             leftMotor.locked = value;
             rightMotor.locked = value;
+            frontLeftMotor.locked = value;
+            frontRightMotor.locked = value;
         }
+    }
+
+    public double leftVelocity{
+        get => leftMotor.velocity;
+        set => leftMotor.velocity = value;
+    }
+
+    public double rightVelocity{
+        get => rightMotor.velocity;
+        set => rightMotor.velocity = value;
     }
 
     /// <summary>
@@ -188,9 +211,11 @@ public class robotBase
     /// <param name="forceUnlock">(bool) Força o destravamento dos motores se verdadeiro</param>
     public void move(double leftVelocity, double rightVelocity, double leftForce = 500, double rightForce = 500, bool forceUnlock = true)
     {
-        this.locked = !forceUnlock;
+        locked = !forceUnlock;
         leftMotor.run(leftVelocity, leftForce);
+        frontLeftMotor.run(leftVelocity, leftForce);
         rightMotor.run(rightVelocity, rightForce);
+        frontRightMotor.run(rightVelocity, rightForce);
     }
 
     /// <summary>
@@ -200,7 +225,7 @@ public class robotBase
     /// <param name="force">(double) Força do robô na curva.</param>
     public void turn(double velocity, double force = 500)
     {
-        this.move(velocity, -velocity, force, force);
+        move(velocity, -velocity, force, force);
     }
 
     /// <summary>
@@ -210,7 +235,7 @@ public class robotBase
     /// <param name="force">(double) Força do robô em linha reta.</param>
     public void moveStraight(double velocity, double force = 500)
     {
-        this.move(velocity, velocity, force, force);
+        move(velocity, velocity, force, force);
     }
 
     /// <summary>
@@ -218,10 +243,24 @@ public class robotBase
     /// </summary>
     /// <param name="time">(int) Tempo para ficar parado.</param>
     /// <param name="lock">(bool) Indica se deve travar os motores após o movimento.</param>
-    public void stop(int time = 50, bool _lock = true)
+    public async Task stop(int time = 50, bool _lock = true)
     {
-        this.move(0, 0);
-        this.locked = _lock;
+        move(-leftVelocity, -rightVelocity);
+        await timer.delay();
+        move(0, 0);
+        locked = _lock;
+        await timer.delay(time);
+        locked = !_lock;
+    }
+
+    public async Task moveTime(double leftVelocity, double rightVelocity, int time = 50, double leftForce = 500, double rightForce = 500){
+        long timeout = timer.current + time;
+        while (timer.current < timeout)
+        {
+            move(leftVelocity, rightVelocity, leftForce, rightForce);
+            await timer.delay();
+        }
+        stop();
     }
 
     /// <summary>
@@ -230,15 +269,16 @@ public class robotBase
     /// <param name="velocity">(double) Velocidade do robô em linha reta.</param>
     /// <param name="force">(double) Força do robô em linha reta.</param>
     /// <param name="time">(int) Tempo para o robô ficar em linha reta.</param>
-    public void moveStraightTime(double velocity, double force = 500, int time = 50)
+    public async Task moveStraightTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
         {
-            this.moveStraight(velocity, force);
-            timer.delay();
+            moveStraight(velocity, force);
+            await timer.delay();
         }
-        this.stop();
+        if(stopAfter)
+            stop();
     }
 
     /// <summary>
@@ -247,19 +287,21 @@ public class robotBase
     /// <param name="velocity">(double) Velocidade do robô em curva.</param>
     /// <param name="force">(double) Força do robô em curva.</param>
     /// <param name="time">(int) Tempo para o robô ficar em curva.</param>
-    public void turnTime(double velocity, double force = 500, int time = 50)
+    public async Task turnTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
         {
-            this.turn(velocity, force);
-            timer.delay();
+            turn(velocity, force);
+            await timer.delay();
         }
-        this.stop();
+        if(stopAfter)
+            stop();
     }
 
 }
-robotBase robot = new robotBase("leftMotor", "rightMotor");
+
+myRobot robot = new myRobot("leftMotor", "rightMotor", "frontLeftMotor", "frontRightMotor");
 
 
 /// <summary>
@@ -339,83 +381,106 @@ lightSensor[] lineSensors ={
 };
 
 double error, lastError, P, D, PD;
-int targetPower = 450;
-int turnPower = 500;
+int targetPower = 350;
+int turnPower = 400;
 long counter = 0;
-byte blackTreshold = 100;
+byte blackTreshold = 50;
+byte diffForExit = 15;
 
 byte centerRightLight; // Valor lido do sensor de luz do meio da direita
 byte centerLeftLight;  // Valor lido do sensor de luz do meio da esquerda
 byte rightLight;       // Valor lido do sensor de luz da direita
+byte centerLight;      // Valor lido do sensor de luz do meio
 byte leftLight;        // Valor lido do sensor de luz da esquerda
-byte borderRightLight; // Valor lido do sensor de luz da borda da direita
-byte borderLeftLight;  // Valor lido do sensor de luz da borda da esquerda
 bool rightGreen;       // Indica se existe verde na direita
 bool leftGreen;        // Indica se existe verde na esquerda
 
 void readColors(){
     leftLight           = (byte)(lineSensors[0].light);
     centerLeftLight     = (byte)(lineSensors[1].light);
+    centerLight         = (byte)(lineSensors[2].light);
     centerRightLight    = (byte)(lineSensors[3].light);
     rightLight          = (byte)(lineSensors[4].light);
 }
 
 void runPD()
 {
-    error = ((lineSensors[0].light - lineSensors[4].light) * 1.2 + (lineSensors[1].light - lineSensors[3].light)) / 2.2;
+    error = (/*(lineSensors[0].light - lineSensors[4].light) * 1.2 + */(lineSensors[1].light - lineSensors[3].light))/* / 2.2*/;
 
     P = error * 45;
-    D = (error - lastError) * -5;
+    D = (error - lastError) * 0;
     lastError = error;
 
     PD = P + D;
 
-    robot.move(targetPower - PD, targetPower + PD);
-    IO.PrintLine(counter.ToString() + "," + PD.ToString());
+    robot.move(targetPower + PD, targetPower - PD);
+    IO.PrintLine(Convert.ToInt32(lineSensors[1].light).ToString() + "\t|\t" + Convert.ToInt32(lineSensors[3].light).ToString());
     counter++;
 
 }
 
-void runLineFollower()
+ async Task runLineFollower()
 {
     readColors();
     IO.PrintLine(centerLeftLight.ToString() + "\t" + centerRightLight.ToString());
 
-    if(leftLight < blackTreshold){
-        turnPower = -500;
-    }
-    if(rightLight < blackTreshold){
-        turnPower = 500;
-    }
-    else{
-        robot.moveStraight(targetPower);
-        return;
+    if(centerLeftLight < blackTreshold){
+        robot.move(0, 0);
+        long timeout = timer.current + 350;
+
+        while(timer.current < timeout)
+        {
+            readColors();
+            if(centerLeftLight > blackTreshold+diffForExit || centerRightLight < blackTreshold || centerLight < blackTreshold)
+                break;
+            robot.turn(-turnPower);
+            await timer.delay();
+        }
+        robot.move(0, 0);
+
     }
 
-    robot.move(turnPower, -turnPower);
+    else if(centerRightLight < blackTreshold){
+        robot.move(0, 0);
+        long timeout = timer.current + 350;
+
+        while(timer.current < timeout)
+        {
+            readColors();
+            if(centerRightLight > blackTreshold+diffForExit || centerLeftLight < blackTreshold || centerLight < blackTreshold)
+                break;
+            robot.turn(turnPower);
+            await timer.delay();
+        }
+        robot.move(0, 0);
+
+    }
+
+    robot.moveStraight(targetPower);
 }
 
-void setup()
+async Task setup()
 {
-    robot.locked = false;
     IO.Timestamp = false;
     IO.ClearWrite();
     IO.ClearPrint();
+    timer.init();
+    await timer.delay(300);
+    robot.locked = false;
+    await robot.moveStraightTime(100, 300);
 }
 
-
-void loop()
+async Task loop()
 {
-    runLineFollower();
+    await runLineFollower();
 }
 
 async Task Main()
 {
-    setup();
+    await setup();
     for (; ; )
     {
-        loop();
+        await loop();
         await timer.delay();
     }
 }
-

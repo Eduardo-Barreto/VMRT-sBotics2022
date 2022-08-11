@@ -1,27 +1,28 @@
 import("config/createObjects.cs");
 import("routines/lineFollower.cs");
 
-void setup()
+async Task setup()
 {
-    robot.locked = false;
     IO.Timestamp = false;
     IO.ClearWrite();
     IO.ClearPrint();
+    timer.init();
+    await timer.delay(300);
+    robot.locked = false;
+    await robot.moveStraightTime(100, 300);
 }
 
-
-void loop()
+async Task loop()
 {
-    runLineFollower();
+    await runLineFollower();
 }
 
 async Task Main()
 {
-    setup();
+    await setup();
     for (; ; )
     {
-        loop();
+        await loop();
         await timer.delay();
     }
 }
-
