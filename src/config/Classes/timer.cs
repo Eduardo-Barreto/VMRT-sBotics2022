@@ -2,23 +2,27 @@
 /// Gerencia o tempo.
 /// </summary>
 
-public class myTimer{
+public static class timer{
     /// <summary>
     /// Armazena o tempo inicial do robô em milissegundos
     /// </summary>
-    public long startTime;
+    public static long startTime;
 
-    /// <summary>
+    /* /// <summary>
     /// Construtor da classe
     /// </summary>
-    public myTimer(){
-        this.startTime = this.currentUnparsed;
+    public static customTimer(int _startTime = 0){
+        startTime = currentUnparsed + _startTime;
+    } */
+
+    public static void init(){
+        startTime = currentUnparsed;
     }
 
     /// <summary>
     /// Tempo atual em milissegundos desde 1970
     /// </summary>
-    public long currentUnparsed{
+    public static long currentUnparsed{
         get{
             return DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
@@ -27,9 +31,9 @@ public class myTimer{
     /// <summary>
     /// Tempo atual em milissegundos desde o início da rotina
     /// </summary>
-    public long current{
+    public static long current{
         get{
-            return this.currentUnparsed - this.startTime;
+            return currentUnparsed - startTime;
         }
     }
 
@@ -37,15 +41,15 @@ public class myTimer{
     /// Reseta o timer atual
     /// </summary>
     /// <param name="_startTime">(long) Valor alvo para resetar o timer</param>
-    public void resetTimer(long _startTime = 0){
-        this.startTime = this.current + _startTime;
+    public static void resetTimer(long _startTime = 0){
+        startTime = current + _startTime;
     }
 
     /// <summary>
     /// Espera um tempo em milissegundos
     /// </summary>
     /// <param name="milliseconds">(int) Tempo a esperar</param>
-    public async Task delay(int milliseconds = 50){
+    public static async Task delay(int milliseconds = 50){
         await Time.Delay(milliseconds);
     }
 
@@ -54,11 +58,11 @@ public class myTimer{
     /// </summary>
     /// <param name="milliseconds">(int) Tempo a esperar</param>
     /// <param name="doWhileWait">(função) Ação para fazer enquanto espera</param>
-    public void delay(int milliseconds, ActionHandler doWhileWait){
-        long timeout = this.current + (milliseconds/50);
+    public static async Task delay(int milliseconds, ActionHandler doWhileWait){
+        long timeout = current + milliseconds;
         while(current < timeout){
             doWhileWait();
-            this.delay();
+            await delay();
         }
     }
 }
