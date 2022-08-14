@@ -1,22 +1,26 @@
-/// <summary>
-/// Gerencia a base do robô
-/// </summary>
-
+/**
+ * @brief Gerencia a base do robô
+ *
+*/
 public class myRobot
 {
-    /// <summary>
-    /// Motores da base do robô.
-    /// </summary>
+    /**
+	 * @brief Motores da base do robô.
+	 *
+	 */
     private motor leftMotor;
     private motor rightMotor;
     private motor frontLeftMotor;
     private motor frontRightMotor;
 
-    /// <summary>
-    /// Construtor da classe.
-    /// </summary>
-    /// <param name="leftMotorName">(String) Nome do motor esquerdo.</param>
-    /// <param name="rightMotorName">(String) Nome do motor direito.</param>
+    /**
+	 * @brief Construtor da classe.
+	 *
+	 * @param leftMotorName: (String) Nome do motor esquerdo.
+	 * @param rightMotorName: (String) Nome do motor direito.
+     * @param frontLeftMotorName: (String) Nome do motor frontal esquerdo do robo.
+     * @param frontRightMotorName: (String) Nome do motor frontal direito do robo.
+	 */
     public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName)
     {
         this.leftMotor = new motor(leftMotorName);
@@ -25,9 +29,10 @@ public class myRobot
         this.frontRightMotor = new motor(frontRightMotorName);
     }
 
-    /// <summary>
-    /// Propriedade que indica se os motores do robô estão travados.
-    /// </summary>
+    /**
+	 * @brief Propriedade que indica se os motores do robô estão travados.
+	 *
+	 */
     public bool locked
     {
         get => (leftMotor.locked || rightMotor.locked || frontLeftMotor.locked || frontRightMotor.locked);
@@ -40,24 +45,33 @@ public class myRobot
         }
     }
 
+    /**
+	 * @brief Propriedade que indica a velocidade do motor da esquerda.
+	 *
+	 */
     public double leftVelocity{
         get => leftMotor.velocity;
         set => leftMotor.velocity = value;
     }
 
+    /**
+	 * @brief Propriedade que indica a velocidade do motor da direita.
+	 *
+	 */
     public double rightVelocity{
         get => rightMotor.velocity;
         set => rightMotor.velocity = value;
     }
 
-    /// <summary>
-    /// Método que move a base do robô com a velocidade e força especificada.
-    /// </summary>
-    /// <param name="leftVelocity">(double) Velocidade do motor esquerdo.</param>
-    /// <param name="leftForce">(double) Força do motor esquerdo.</param>
-    /// <param name="rightVelocity">(double) Velocidade do motor direito.</param>
-    /// <param name="rightForce">(double) Força do motor direito.</param>
-    /// <param name="forceUnlock">(bool) Força o destravamento dos motores se verdadeiro</param>
+    /**
+	 * @brief Método que move a base do robô com a velocidade e força especificada.
+	 *
+	 * @param leftVelocity: (double) Velocidade do motor esquerdo.
+	 * @param leftForce: (double) Força do motor esquerdo.
+	 * @param rightVelocity: (double) Velocidade do motor direito.
+	 * @param rightForce: (double) Força do motor direito.
+	 * @param forceUnlock: (bool) Força o destravamento dos motores se verdadeiro
+	 */
     public void move(double leftVelocity, double rightVelocity, double leftForce = 500, double rightForce = 500, bool forceUnlock = true)
     {
         locked = !forceUnlock;
@@ -67,31 +81,34 @@ public class myRobot
         frontRightMotor.run(rightVelocity, rightForce);
     }
 
-    /// <summary>
-    /// Método que move a base do robô em curva com a velocidade e força especificada.
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô na curva.</param>
-    /// <param name="force">(double) Força do robô na curva.</param>
+    /**
+	 * @brief Método que move a base do robô em curva com a velocidade e força especificada.
+	 *
+	 * @param velocity: (double) Velocidade do robô na curva.
+	 * @param force: (double) Força do robô na curva.
+	 */
     public void turn(double velocity, double force = 500)
     {
         move(velocity, -velocity, force, force);
     }
 
-    /// <summary>
-    /// Método que move a base do robô em linha reta com a velocidade e força especificada.
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô em linha reta.</param>
-    /// <param name="force">(double) Força do robô em linha reta.</param>
+    /**
+	 * @brief Método que move a base do robô em linha reta com a velocidade e força especificada.
+	 *
+	 * @param velocity: (double) Velocidade do robô em linha reta.
+	 * @param force: (double) Força do robô em linha reta.
+	 */
     public void moveStraight(double velocity, double force = 500)
     {
         move(velocity, velocity, force, force);
     }
 
-    /// <summary>
-    /// Método que para o robô.
-    /// </summary>
-    /// <param name="time">(int) Tempo para ficar parado.</param>
-    /// <param name="lock">(bool) Indica se deve travar os motores após o movimento.</param>
+    /**
+	 * @brief Método que para o robô.
+	 *
+	 * @param time: (int) Tempo para ficar parado.
+	 * @param lock: (bool) Indica se deve travar os motores após o movimento.
+	 */
     public async Task stop(int time = 50, bool _lock = true)
     {
         move(-leftVelocity, -rightVelocity);
@@ -102,6 +119,16 @@ public class myRobot
         locked = !_lock;
     }
 
+
+    /**
+	 * @brief Método que move o robô durante um determinado tempo
+	 *
+	 * @param leftVelocity: (double) Velocidade do motor esquerdo.
+	 * @param rightVelocity: (double) Velocidade do motor direito.
+     * @param time: (int) Tempo para andar.
+     * @param leftForce: (double) Força do motor esquerdo.
+     * @param rightForce: (double) Força do motor direito.
+	 */
     public async Task moveTime(double leftVelocity, double rightVelocity, int time = 50, double leftForce = 500, double rightForce = 500){
         long timeout = timer.current + time;
         while (timer.current < timeout)
@@ -112,12 +139,13 @@ public class myRobot
         stop();
     }
 
-    /// <summary>
-    /// Método que move o robô em linha reta durante um determinado tempo
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô em linha reta.</param>
-    /// <param name="force">(double) Força do robô em linha reta.</param>
-    /// <param name="time">(int) Tempo para o robô ficar em linha reta.</param>
+    /**
+	 * @brief Método que move o robô em linha reta durante um determinado tempo
+	 *
+	 * @param velocity: (double) Velocidade do robô em linha reta.
+	 * @param force: (double) Força do robô em linha reta.
+	 * @param time: (int) Tempo para o robô ficar em linha reta.
+	 */
     public async Task moveStraightTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
     {
         long timeout = timer.current + time;
@@ -130,12 +158,13 @@ public class myRobot
             stop();
     }
 
-    /// <summary>
-    /// Método que move o robô em curva durante um determinado tempo
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô em curva.</param>
-    /// <param name="force">(double) Força do robô em curva.</param>
-    /// <param name="time">(int) Tempo para o robô ficar em curva.</param>
+    /**
+	 * @brief Método que move o robô em curva durante um determinado tempo
+	 *
+	 * @param velocity: (double) Velocidade do robô em curva.
+	 * @param force: (double) Força do robô em curva.
+	 * @param time: (int) Tempo para o robô ficar em curva.
+	 */
     public async Task turnTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
     {
         long timeout = timer.current + time;

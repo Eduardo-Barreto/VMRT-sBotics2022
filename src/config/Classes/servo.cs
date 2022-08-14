@@ -1,67 +1,74 @@
-/// <summary>
-/// Gerencia um motor.
-/// </summary>
+/**
+* @brief Gerencia um motor.
+*/
+
 
 public class motor
 {
-    /// <summary>
-    /// Motor a ser gerenciado.
-    /// </summary>
+    /**
+	 * @brief Motor a ser gerenciado.
+	 *
+	 */
     private Servomotor servo;
 
-    /// <summary>
-    /// Construtor da classe.
-    /// </summary>
-    /// <param name="motorName">Nome do motor</param>
+    /**
+	 * @brief Construtor da classe.
+	 *
+	 * @param motorName: Nome do motor 
+	 */
     public motor(string motorName)
     {
         this.servo = Bot.GetComponent<Servomotor>(motorName);
     }
 
-    /// <summary>
-    /// Indica se o motor está travado.
-    /// </summary>
-    /// <value>(bool) Trava o motor se verdadeiro</value>
+    /**
+	 * @brief Indica se o motor está travado.
+	 *
+	 * @value (bool) Trava o motor se verdadeiro
+	 */
     public bool locked
     {
         get => servo.Locked;
         set => servo.Locked = value;
     }
 
-    /// <summary>
-    /// Indica o ângulo atual do motor (-180 ~ 180).
-    /// </summary>
-    /// <value></value>
+    /**
+	 * @brief Indica o ângulo atual do motor (-180 ~ 180).
+	 *
+	 */
     public double angle
     {
         get => servo.Angle;
     }
 
-    /// <summary>
-    /// Indica a velocidade atual do motor (-500 ~ 500).
-    /// </summary>
-    /// <value>(double) Velocidade desejada</value>
+    /**
+	 * @brief Indica a velocidade atual do motor (-500 ~ 500).
+	 *
+	 * @value (double) Velocidade desejada
+	 */
     public double velocity
     {
         get => servo.Velocity;
         set => servo.Target = value;
     }
 
-    /// <summary>
-    /// Indica a força atual do motor (0 ~ 500).
-    /// </summary>
-    /// <value>(double) Força desejada</value>
+    /**
+	 * @brief Indica a força atual do motor (0 ~ 500).
+	 *
+	 * @value (double) Força desejada
+	 */
     public double force
     {
         get => servo.Force;
         set => servo.Force = value;
     }
 
-    /// <summary>
-    /// Move o motor na velocidade e força desejadas.
-    /// </summary>
-    /// <param name="_velocity">(double) Velocidade desejada (-500 ~ 500).</param>
-    /// <param name="_force">(double) Força desejada (0 ~ 500).</param>
+    /**
+	 * @brief Move o motor na velocidade e força desejadas.
+	 *
+	 * @param _velocity: (double) Velocidade desejada (-500 ~ 500).
+	 * @param _force: (double) Força desejada (0 ~ 500).
+	 */
     public void run(double _velocity, double _force = 500)
     {
         this.velocity = _velocity;
