@@ -46,7 +46,7 @@ public static class timer{
 	 *
 	 * @param milliseconds: (int) Tempo a esperar
 	 */
-    public static async Task delay(int milliseconds = 50){
+    public static async Task delay(int milliseconds = 1){
         await Time.Delay(milliseconds);
     }
 
