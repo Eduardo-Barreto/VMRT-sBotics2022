@@ -18,6 +18,13 @@ lightSensor[] lineSensors ={
     new lightSensor("S0"),
     new lightSensor("S1"),
     new lightSensor("S2"),
-    new lightSensor("S3"),
-    new lightSensor("S4")
+    new lightSensor("S3")
+};
+
+import("config/Classes/led.cs");
+led[] leds ={
+    new led("L0"),
+    new led("L1"),
+    new led("L2"),
+    new led("L3")
 };
