@@ -29,6 +29,21 @@ public class myRobot
         this.frontRightMotor = new motor(frontRightMotorName);
     }
 
+    public double inclination
+    {
+        get => Bot.Inclination;
+    }
+
+    public double compass
+    {
+        get => Bot.Compass;
+    }
+
+    public int brickSpeed
+    {
+        get => (int)(Bot.Speed);
+    }
+
     /**
 	 * @brief Propriedade que indica se os motores do robô estão travados.
 	 *
@@ -49,7 +64,7 @@ public class myRobot
 	 * @brief Propriedade que indica a velocidade do motor da esquerda.
 	 *
 	 */
-    public double leftVelocity{
+    public int leftVelocity{
         get => leftMotor.velocity;
         set => leftMotor.velocity = value;
     }
@@ -58,7 +73,7 @@ public class myRobot
 	 * @brief Propriedade que indica a velocidade do motor da direita.
 	 *
 	 */
-    public double rightVelocity{
+    public int rightVelocity{
         get => rightMotor.velocity;
         set => rightMotor.velocity = value;
     }
@@ -66,13 +81,13 @@ public class myRobot
     /**
 	 * @brief Método que move a base do robô com a velocidade e força especificada.
 	 *
-	 * @param leftVelocity: (double) Velocidade do motor esquerdo.
-	 * @param leftForce: (double) Força do motor esquerdo.
-	 * @param rightVelocity: (double) Velocidade do motor direito.
-	 * @param rightForce: (double) Força do motor direito.
+	 * @param leftVelocity: (int) Velocidade do motor esquerdo.
+	 * @param rightVelocity: (int) Velocidade do motor direito.
+	 * @param leftForce: (byte) Força do motor esquerdo.
+	 * @param rightForce: (byte) Força do motor direito.
 	 * @param forceUnlock: (bool) Força o destravamento dos motores se verdadeiro
 	 */
-    public void move(double leftVelocity, double rightVelocity, double leftForce = 500, double rightForce = 500, bool forceUnlock = true)
+    public void move(int leftVelocity, int rightVelocity, byte leftForce = 10, byte rightForce = 10, bool forceUnlock = true)
     {
         locked = !forceUnlock;
         leftMotor.run(leftVelocity, leftForce);
@@ -84,10 +99,10 @@ public class myRobot
     /**
 	 * @brief Método que move a base do robô em curva com a velocidade e força especificada.
 	 *
-	 * @param velocity: (double) Velocidade do robô na curva.
-	 * @param force: (double) Força do robô na curva.
+	 * @param velocity: (int) Velocidade do robô na curva.
+	 * @param force: (byte) Força do robô na curva.
 	 */
-    public void turn(double velocity, double force = 500)
+    public void turn(int velocity, byte force = 10)
     {
         move(velocity, -velocity, force, force);
     }
@@ -95,10 +110,10 @@ public class myRobot
     /**
 	 * @brief Método que move a base do robô em linha reta com a velocidade e força especificada.
 	 *
-	 * @param velocity: (double) Velocidade do robô em linha reta.
-	 * @param force: (double) Força do robô em linha reta.
+	 * @param velocity: (int) Velocidade do robô em linha reta.
+	 * @param force: (byte) Força do robô em linha reta.
 	 */
-    public void moveStraight(double velocity, double force = 500)
+    public void moveStraight(int velocity, byte force = 10)
     {
         move(velocity, velocity, force, force);
     }
@@ -111,9 +126,9 @@ public class myRobot
 	 */
     public async Task stop(int time = 50, bool _lock = true)
     {
-        move(-leftVelocity, -rightVelocity);
+        move(-leftVelocity, -rightVelocity, 100, 100);
         await timer.delay();
-        move(0, 0);
+        move(0, 0, 100, 100);
         locked = _lock;
         await timer.delay(time);
         locked = !_lock;
@@ -123,30 +138,30 @@ public class myRobot
     /**
 	 * @brief Método que move o robô durante um determinado tempo
 	 *
-	 * @param leftVelocity: (double) Velocidade do motor esquerdo.
-	 * @param rightVelocity: (double) Velocidade do motor direito.
+	 * @param leftVelocity: (int) Velocidade do motor esquerdo.
+	 * @param rightVelocity: (int) Velocidade do motor direito.
      * @param time: (int) Tempo para andar.
-     * @param leftForce: (double) Força do motor esquerdo.
-     * @param rightForce: (double) Força do motor direito.
+     * @param leftForce: (byte) Força do motor esquerdo.
+     * @param rightForce: (byte) Força do motor direito.
 	 */
-    public async Task moveTime(double leftVelocity, double rightVelocity, int time = 50, double leftForce = 500, double rightForce = 500){
+    public async Task moveTime(int leftVelocity, int rightVelocity, int time = 50, byte leftForce = 10, byte rightForce = 10){
         long timeout = timer.current + time;
         while (timer.current < timeout)
         {
             move(leftVelocity, rightVelocity, leftForce, rightForce);
             await timer.delay();
         }
-        stop();
+        await stop();
     }
 
     /**
 	 * @brief Método que move o robô em linha reta durante um determinado tempo
 	 *
-	 * @param velocity: (double) Velocidade do robô em linha reta.
-	 * @param force: (double) Força do robô em linha reta.
+	 * @param velocity: (int) Velocidade do robô em linha reta.
+	 * @param force: (byte) Força do robô em linha reta.
 	 * @param time: (int) Tempo para o robô ficar em linha reta.
 	 */
-    public async Task moveStraightTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
+    public async Task moveStraightTime(int velocity, int time = 50, byte force = 10, bool stopAfter = true)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
@@ -155,17 +170,17 @@ public class myRobot
             await timer.delay();
         }
         if(stopAfter)
-            stop();
+            await stop();
     }
 
     /**
 	 * @brief Método que move o robô em curva durante um determinado tempo
 	 *
-	 * @param velocity: (double) Velocidade do robô em curva.
-	 * @param force: (double) Força do robô em curva.
+	 * @param velocity: (int) Velocidade do robô em curva.
+	 * @param force: (byte) Força do robô em curva.
 	 * @param time: (int) Tempo para o robô ficar em curva.
 	 */
-    public async Task turnTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
+    public async Task turnTime(int velocity, int time = 50, byte force = 10, bool stopAfter = true)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
@@ -174,7 +189,35 @@ public class myRobot
             await timer.delay();
         }
         if(stopAfter)
-            stop();
+            await stop();
+    }
+
+    public async Task turnDegrees(int degrees, int velocity, byte force = 10, bool fast = false){
+        int turnSide = (degrees > 0) ? 1 : -1;
+        int targetAngle = convertDegrees((compass) + degrees);
+
+        while(!proximity(compass, targetAngle, 20)){
+            turn(velocity * turnSide, force);
+            await timer.delay();
+        }
+
+        if(fast){
+            await stop();
+            return;
+        }
+
+        while(!proximity(compass, targetAngle, 1)){
+            turn(5 * turnSide, force);
+            await timer.delay();
+        }
+
+        await stop();
+    }
+
+    public async Task die(){
+        await stop(100);
+        locked = true;
+        await stop(int.MaxValue);
     }
 
 }
