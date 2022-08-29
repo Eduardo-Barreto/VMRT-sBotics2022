@@ -1,78 +1,95 @@
-double error, lastError, P, D, PD;
-int targetPower = 350;
-int turnPower = 400;
-long counter = 0;
-byte blackTreshold = 50;
+int targetPower = 10;
+int turnPower = 10;
+byte blackTreshold = 15;
+byte blackTresholdTurn = 25;
 byte diffForExit = 15;
 
 byte centerRightLight; // Valor lido do sensor de luz do meio da direita
 byte centerLeftLight;  // Valor lido do sensor de luz do meio da esquerda
 byte rightLight;       // Valor lido do sensor de luz da direita
-byte centerLight;      // Valor lido do sensor de luz do meio
 byte leftLight;        // Valor lido do sensor de luz da esquerda
+
+bool centerRightBlack; // Se o sensor de luz do meio da direita está preto
+bool centerLeftBlack;  // Se o sensor de luz do meio da esquerda está preto
+bool rightBlack;       // Se o sensor de luz da direita está preto
+bool leftBlack;        // Se o sensor de luz da esquerda está preto
+
 bool rightGreen;       // Indica se existe verde na direita
 bool leftGreen;        // Indica se existe verde na esquerda
 
 void readColors(){
     leftLight           = (byte)(lineSensors[0].light);
     centerLeftLight     = (byte)(lineSensors[1].light);
-    centerLight         = (byte)(lineSensors[2].light);
-    centerRightLight    = (byte)(lineSensors[3].light);
-    rightLight          = (byte)(lineSensors[4].light);
+    centerRightLight    = (byte)(lineSensors[2].light);
+    rightLight          = (byte)(lineSensors[3].light);
+
+    leftBlack           = (leftLight < blackTresholdTurn);
+    centerLeftBlack     = (centerLeftLight < blackTreshold);
+    centerRightBlack    = (centerRightLight < blackTreshold);
+    rightBlack          = (rightLight < blackTresholdTurn);
+
+    leftGreen           = (lineSensors[0].isGreen || lineSensors[1].isGreen);
+    rightGreen          = (lineSensors[2].isGreen || lineSensors[3].isGreen);
 }
 
-void runPD()
-{
-    error = (/*(lineSensors[0].light - lineSensors[4].light) * 1.2 + */(lineSensors[1].light - lineSensors[3].light))/* / 2.2*/;
-
-    P = error * 45;
-    D = (error - lastError) * 0;
-    lastError = error;
-
-    PD = P + D;
-
-    robot.move(targetPower + PD, targetPower - PD);
-    IO.PrintLine(Convert.ToInt32(lineSensors[1].light).ToString() + "\t|\t" + Convert.ToInt32(lineSensors[3].light).ToString());
-    counter++;
-
+async Task alignLine(){
+    while(leftBlack || centerLeftBlack){
+        readColors();
+        robot.turn(-10);
+        await timer.delay();
+    }
+    await robot.stop();
+    while(rightBlack || centerRightBlack){
+        readColors();
+        robot.turn(10);
+        await timer.delay();
+    }
+    await robot.stop();
 }
+
+
+import("routines/crosspath.cs");
 
 async Task runLineFollower()
 {
-    readColors();
-    IO.PrintLine(centerLeftLight.ToString() + "\t" + centerRightLight.ToString());
-
-    if(centerLeftLight < blackTreshold){
-        robot.move(0, 0);
+    if(centerLeftBlack){
         long timeout = timer.current + 350;
 
         while(timer.current < timeout)
         {
             readColors();
-            if(centerLeftLight > blackTreshold+diffForExit || centerRightLight < blackTreshold || centerLight < blackTreshold)
+            if(await checkTurn())
+                return;
+            if(centerLeftLight > blackTreshold+diffForExit || centerRightBlack)
                 break;
-            robot.turn(-turnPower);
+            robot.turn(-turnPower, 100);
             await timer.delay();
         }
-        robot.move(0, 0);
 
     }
 
-    else if(centerRightLight < blackTreshold){
-        robot.move(0, 0);
+    else if(centerRightBlack){
         long timeout = timer.current + 350;
 
         while(timer.current < timeout)
         {
             readColors();
-            if(centerRightLight > blackTreshold+diffForExit || centerLeftLight < blackTreshold || centerLight < blackTreshold)
+            if(await checkTurn())
+                return;
+            if(centerRightLight > blackTreshold+diffForExit || centerLeftBlack)
                 break;
-            robot.turn(turnPower);
+            robot.turn(turnPower, 100);
             await timer.delay();
         }
-        robot.move(0, 0);
 
     }
 
     robot.moveStraight(targetPower);
+}
+
+async Task runFloor(){
+    readColors();
+    await runLineFollower();
+    await checkTurn();
+    await checkGreen();
 }

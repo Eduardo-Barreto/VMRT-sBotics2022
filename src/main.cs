@@ -1,3 +1,4 @@
+import("config/math.cs")
 import("config/createObjects.cs");
 import("routines/lineFollower.cs");
 
@@ -9,12 +10,20 @@ async Task setup()
     timer.init();
     await timer.delay(300);
     robot.locked = false;
-    await robot.moveStraightTime(100, 300);
+    readColors();
+    await alignLine();
+    await robot.moveStraightTime(10, 300);
+    readColors();
+    await alignLine();
+}
+
+async Task debugLoop()
+{
 }
 
 async Task loop()
 {
-    await runLineFollower();
+    await runFloor();
 }
 
 async Task Main()
@@ -22,7 +31,11 @@ async Task Main()
     await setup();
     for (; ; )
     {
-        await loop();
+        #if(false)
+            await debugLoop();
+        #else
+            await loop();
+        #endif
         await timer.delay();
     }
 }

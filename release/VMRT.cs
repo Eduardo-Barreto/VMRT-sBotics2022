@@ -1,67 +1,88 @@
 
+static double map(double val, double inMin, double inMax, double outMin, double outMax)
+{
+    // "mapeia" ou reescala um val (val), de uma escala (inMin~inMax) para outra (outMin~outMax)
+    return (val - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+}
+
+static bool interval(double val, double min, double max)
+{
+    // verifica se um valor (val) está dentro de um intervalo (min~max)
+    return val >= min && val <= max;
+}
+
+static bool proximity(double val, double target, double tolerance = 1)
+{
+    // verifica se um valor (val) está proximo de um alvo (target) com tolerância (tolerance)
+    return interval(val, target - tolerance, target + tolerance);
+}
+
+static int convertDegrees(double degrees){
+    // converte um angulo em graus para sempre se manter entre 0~360
+    return (int)((degrees % 360 + 360) % 360);
+}
+
 public delegate void ActionHandler();
 
 
-/// <summary>
-/// Gerencia o tempo.
-/// </summary>
+/**
+ * @brief Gerencia o tempo.
+ *
+ */
 
 public static class timer{
-    /// <summary>
-    /// Armazena o tempo inicial do robô em milissegundos
-    /// </summary>
+    /**
+	 * @brief Armazena o tempo inicial do robô em milissegundos
+	 *
+	 */
     public static long startTime;
-
-    /* /// <summary>
-    /// Construtor da classe
-    /// </summary>
-    public static customTimer(int _startTime = 0){
-        startTime = currentUnparsed + _startTime;
-    } */
 
     public static void init(){
         startTime = currentUnparsed;
     }
 
-    /// <summary>
-    /// Tempo atual em milissegundos desde 1970
-    /// </summary>
+    /**
+	 * @brief Tempo atual em milissegundos desde 1970
+	 */
     public static long currentUnparsed{
         get{
             return DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
     }
 
-    /// <summary>
-    /// Tempo atual em milissegundos desde o início da rotina
-    /// </summary>
+    /**
+	 * @brief Tempo atual em milissegundos desde o início da rotina
+	 */
     public static long current{
         get{
             return currentUnparsed - startTime;
         }
     }
 
-    /// <summary>
-    /// Reseta o timer atual
-    /// </summary>
-    /// <param name="_startTime">(long) Valor alvo para resetar o timer</param>
+    /**
+	 * @brief Reseta o timer atual
+	 *
+	 * @param _startTime: (long) Valor alvo para resetar o timer
+	 */
     public static void resetTimer(long _startTime = 0){
         startTime = current + _startTime;
     }
 
-    /// <summary>
-    /// Espera um tempo em milissegundos
-    /// </summary>
-    /// <param name="milliseconds">(int) Tempo a esperar</param>
-    public static async Task delay(int milliseconds = 50){
+    /**
+	 * @brief Espera um tempo em milissegundos
+	 *
+	 * @param milliseconds: (int) Tempo a esperar
+	 */
+    public static async Task delay(int milliseconds = 1){
         await Time.Delay(milliseconds);
     }
 
-    /// <summary>
-    /// Espera um tempo em milissegundos enquanto realiza uma função.
-    /// </summary>
-    /// <param name="milliseconds">(int) Tempo a esperar</param>
-    /// <param name="doWhileWait">(função) Ação para fazer enquanto espera</param>
+    /**
+	 * @brief Espera um tempo em milissegundos enquanto realiza uma função.
+	 *
+	 * @param milliseconds: (int) Tempo a esperar
+	 * @param doWhileWait: (função) Ação para fazer enquanto espera
+	 */
     public static async Task delay(int milliseconds, ActionHandler doWhileWait){
         long timeout = current + milliseconds;
         while(current < timeout){
@@ -73,74 +94,81 @@ public static class timer{
 
 
 
-/// <summary>
-/// Gerencia um motor.
-/// </summary>
+/**
+* @brief Gerencia um motor.
+*/
+
 
 public class motor
 {
-    /// <summary>
-    /// Motor a ser gerenciado.
-    /// </summary>
+    /**
+	 * @brief Motor a ser gerenciado.
+	 *
+	 */
     private Servomotor servo;
 
-    /// <summary>
-    /// Construtor da classe.
-    /// </summary>
-    /// <param name="motorName">Nome do motor</param>
+    /**
+	 * @brief Construtor da classe.
+	 *
+	 * @param motorName: Nome do motor 
+	 */
     public motor(string motorName)
     {
         this.servo = Bot.GetComponent<Servomotor>(motorName);
     }
 
-    /// <summary>
-    /// Indica se o motor está travado.
-    /// </summary>
-    /// <value>(bool) Trava o motor se verdadeiro</value>
+    /**
+	 * @brief Indica se o motor está travado.
+	 *
+	 * @value (bool) Trava o motor se verdadeiro
+	 */
     public bool locked
     {
         get => servo.Locked;
         set => servo.Locked = value;
     }
 
-    /// <summary>
-    /// Indica o ângulo atual do motor (-180 ~ 180).
-    /// </summary>
-    /// <value></value>
+    /**
+	 * @brief Indica o ângulo atual do motor (-180 ~ 180).
+	 *
+	 */
     public double angle
     {
         get => servo.Angle;
     }
 
-    /// <summary>
-    /// Indica a velocidade atual do motor (-500 ~ 500).
-    /// </summary>
-    /// <value>(double) Velocidade desejada</value>
-    public double velocity
+    /**
+	 * @brief Indica a velocidade atual do motor (-100 ~ 100).
+	 *
+	 * @value (double) Velocidade desejada
+	 */
+    public int velocity
     {
-        get => servo.Velocity;
-        set => servo.Target = value;
+        get => (int)(servo.Velocity/5);
+        set => servo.Target = (double)(value*5);
     }
 
-    /// <summary>
-    /// Indica a força atual do motor (0 ~ 500).
-    /// </summary>
-    /// <value>(double) Força desejada</value>
-    public double force
+    /**
+	 * @brief Indica a força atual do motor (0 ~ 500).
+	 *
+	 * @value (double) Força desejada
+	 */
+    public int force
     {
-        get => servo.Force;
-        set => servo.Force = value;
+        get => (byte)(servo.Force/5);
+        set => servo.Force = (double)(value*5);
     }
 
-    /// <summary>
-    /// Move o motor na velocidade e força desejadas.
-    /// </summary>
-    /// <param name="_velocity">(double) Velocidade desejada (-500 ~ 500).</param>
-    /// <param name="_force">(double) Força desejada (0 ~ 500).</param>
-    public void run(double _velocity, double _force = 500)
+    /**
+	 * @brief Move o motor na velocidade e força desejadas.
+	 *
+	 * @param _velocity: (int) Velocidade desejada (-100 ~ 100).
+	 * @param _force: (byte) Força desejada (0 ~ 500).
+	 */
+    public void run(int _velocity, byte _force = 100)
     {
-        this.velocity = _velocity;
-        this.force = _force;
+        this.velocity = _velocity*5;
+        this.force = _force*5;
     }
 }
 motor leftMotor = new motor("leftMotor");
@@ -149,25 +177,29 @@ motor frontLeftMotor = new motor("frontLeftMotor");
 motor frontRightMotor = new motor("frontRightMotor");
 
 
-/// <summary>
-/// Gerencia a base do robô
-/// </summary>
-
+/**
+ * @brief Gerencia a base do robô
+ *
+*/
 public class myRobot
 {
-    /// <summary>
-    /// Motores da base do robô.
-    /// </summary>
+    /**
+	 * @brief Motores da base do robô.
+	 *
+	 */
     private motor leftMotor;
     private motor rightMotor;
     private motor frontLeftMotor;
     private motor frontRightMotor;
 
-    /// <summary>
-    /// Construtor da classe.
-    /// </summary>
-    /// <param name="leftMotorName">(String) Nome do motor esquerdo.</param>
-    /// <param name="rightMotorName">(String) Nome do motor direito.</param>
+    /**
+	 * @brief Construtor da classe.
+	 *
+	 * @param leftMotorName: (String) Nome do motor esquerdo.
+	 * @param rightMotorName: (String) Nome do motor direito.
+     * @param frontLeftMotorName: (String) Nome do motor frontal esquerdo do robo.
+     * @param frontRightMotorName: (String) Nome do motor frontal direito do robo.
+	 */
     public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName)
     {
         this.leftMotor = new motor(leftMotorName);
@@ -176,9 +208,25 @@ public class myRobot
         this.frontRightMotor = new motor(frontRightMotorName);
     }
 
-    /// <summary>
-    /// Propriedade que indica se os motores do robô estão travados.
-    /// </summary>
+    public double inclination
+    {
+        get => Bot.Inclination;
+    }
+
+    public double compass
+    {
+        get => Bot.Compass;
+    }
+
+    public int brickSpeed
+    {
+        get => (int)(Bot.Speed);
+    }
+
+    /**
+	 * @brief Propriedade que indica se os motores do robô estão travados.
+	 *
+	 */
     public bool locked
     {
         get => (leftMotor.locked || rightMotor.locked || frontLeftMotor.locked || frontRightMotor.locked);
@@ -191,25 +239,34 @@ public class myRobot
         }
     }
 
-    public double leftVelocity{
+    /**
+	 * @brief Propriedade que indica a velocidade do motor da esquerda.
+	 *
+	 */
+    public int leftVelocity{
         get => leftMotor.velocity;
         set => leftMotor.velocity = value;
     }
 
-    public double rightVelocity{
+    /**
+	 * @brief Propriedade que indica a velocidade do motor da direita.
+	 *
+	 */
+    public int rightVelocity{
         get => rightMotor.velocity;
         set => rightMotor.velocity = value;
     }
 
-    /// <summary>
-    /// Método que move a base do robô com a velocidade e força especificada.
-    /// </summary>
-    /// <param name="leftVelocity">(double) Velocidade do motor esquerdo.</param>
-    /// <param name="leftForce">(double) Força do motor esquerdo.</param>
-    /// <param name="rightVelocity">(double) Velocidade do motor direito.</param>
-    /// <param name="rightForce">(double) Força do motor direito.</param>
-    /// <param name="forceUnlock">(bool) Força o destravamento dos motores se verdadeiro</param>
-    public void move(double leftVelocity, double rightVelocity, double leftForce = 500, double rightForce = 500, bool forceUnlock = true)
+    /**
+	 * @brief Método que move a base do robô com a velocidade e força especificada.
+	 *
+	 * @param leftVelocity: (int) Velocidade do motor esquerdo.
+	 * @param rightVelocity: (int) Velocidade do motor direito.
+	 * @param leftForce: (byte) Força do motor esquerdo.
+	 * @param rightForce: (byte) Força do motor direito.
+	 * @param forceUnlock: (bool) Força o destravamento dos motores se verdadeiro
+	 */
+    public void move(int leftVelocity, int rightVelocity, byte leftForce = 10, byte rightForce = 10, bool forceUnlock = true)
     {
         locked = !forceUnlock;
         leftMotor.run(leftVelocity, leftForce);
@@ -218,58 +275,72 @@ public class myRobot
         frontRightMotor.run(rightVelocity, rightForce);
     }
 
-    /// <summary>
-    /// Método que move a base do robô em curva com a velocidade e força especificada.
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô na curva.</param>
-    /// <param name="force">(double) Força do robô na curva.</param>
-    public void turn(double velocity, double force = 500)
+    /**
+	 * @brief Método que move a base do robô em curva com a velocidade e força especificada.
+	 *
+	 * @param velocity: (int) Velocidade do robô na curva.
+	 * @param force: (byte) Força do robô na curva.
+	 */
+    public void turn(int velocity, byte force = 10)
     {
         move(velocity, -velocity, force, force);
     }
 
-    /// <summary>
-    /// Método que move a base do robô em linha reta com a velocidade e força especificada.
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô em linha reta.</param>
-    /// <param name="force">(double) Força do robô em linha reta.</param>
-    public void moveStraight(double velocity, double force = 500)
+    /**
+	 * @brief Método que move a base do robô em linha reta com a velocidade e força especificada.
+	 *
+	 * @param velocity: (int) Velocidade do robô em linha reta.
+	 * @param force: (byte) Força do robô em linha reta.
+	 */
+    public void moveStraight(int velocity, byte force = 10)
     {
         move(velocity, velocity, force, force);
     }
 
-    /// <summary>
-    /// Método que para o robô.
-    /// </summary>
-    /// <param name="time">(int) Tempo para ficar parado.</param>
-    /// <param name="lock">(bool) Indica se deve travar os motores após o movimento.</param>
+    /**
+	 * @brief Método que para o robô.
+	 *
+	 * @param time: (int) Tempo para ficar parado.
+	 * @param lock: (bool) Indica se deve travar os motores após o movimento.
+	 */
     public async Task stop(int time = 50, bool _lock = true)
     {
-        move(-leftVelocity, -rightVelocity);
+        move(-leftVelocity, -rightVelocity, 100, 100);
         await timer.delay();
-        move(0, 0);
+        move(0, 0, 100, 100);
         locked = _lock;
         await timer.delay(time);
         locked = !_lock;
     }
 
-    public async Task moveTime(double leftVelocity, double rightVelocity, int time = 50, double leftForce = 500, double rightForce = 500){
+
+    /**
+	 * @brief Método que move o robô durante um determinado tempo
+	 *
+	 * @param leftVelocity: (int) Velocidade do motor esquerdo.
+	 * @param rightVelocity: (int) Velocidade do motor direito.
+     * @param time: (int) Tempo para andar.
+     * @param leftForce: (byte) Força do motor esquerdo.
+     * @param rightForce: (byte) Força do motor direito.
+	 */
+    public async Task moveTime(int leftVelocity, int rightVelocity, int time = 50, byte leftForce = 10, byte rightForce = 10){
         long timeout = timer.current + time;
         while (timer.current < timeout)
         {
             move(leftVelocity, rightVelocity, leftForce, rightForce);
             await timer.delay();
         }
-        stop();
+        await stop();
     }
 
-    /// <summary>
-    /// Método que move o robô em linha reta durante um determinado tempo
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô em linha reta.</param>
-    /// <param name="force">(double) Força do robô em linha reta.</param>
-    /// <param name="time">(int) Tempo para o robô ficar em linha reta.</param>
-    public async Task moveStraightTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
+    /**
+	 * @brief Método que move o robô em linha reta durante um determinado tempo
+	 *
+	 * @param velocity: (int) Velocidade do robô em linha reta.
+	 * @param force: (byte) Força do robô em linha reta.
+	 * @param time: (int) Tempo para o robô ficar em linha reta.
+	 */
+    public async Task moveStraightTime(int velocity, int time = 50, byte force = 10, bool stopAfter = true)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
@@ -278,16 +349,17 @@ public class myRobot
             await timer.delay();
         }
         if(stopAfter)
-            stop();
+            await stop();
     }
 
-    /// <summary>
-    /// Método que move o robô em curva durante um determinado tempo
-    /// </summary>
-    /// <param name="velocity">(double) Velocidade do robô em curva.</param>
-    /// <param name="force">(double) Força do robô em curva.</param>
-    /// <param name="time">(int) Tempo para o robô ficar em curva.</param>
-    public async Task turnTime(double velocity, int time = 50, bool stopAfter = true, double force = 500)
+    /**
+	 * @brief Método que move o robô em curva durante um determinado tempo
+	 *
+	 * @param velocity: (int) Velocidade do robô em curva.
+	 * @param force: (byte) Força do robô em curva.
+	 * @param time: (int) Tempo para o robô ficar em curva.
+	 */
+    public async Task turnTime(int velocity, int time = 50, byte force = 10, bool stopAfter = true)
     {
         long timeout = timer.current + time;
         while (timer.current < timeout)
@@ -296,7 +368,35 @@ public class myRobot
             await timer.delay();
         }
         if(stopAfter)
-            stop();
+            await stop();
+    }
+
+    public async Task turnDegrees(int degrees, int velocity, byte force = 10, bool fast = false){
+        int turnSide = (degrees > 0) ? 1 : -1;
+        int targetAngle = convertDegrees((compass) + degrees);
+
+        while(!proximity(compass, targetAngle, 20)){
+            turn(velocity * turnSide, force);
+            await timer.delay();
+        }
+
+        if(fast){
+            await stop();
+            return;
+        }
+
+        while(!proximity(compass, targetAngle, 1)){
+            turn(5 * turnSide, force);
+            await timer.delay();
+        }
+
+        await stop();
+    }
+
+    public async Task die(){
+        await stop(100);
+        locked = true;
+        await stop(int.MaxValue);
     }
 
 }
@@ -370,9 +470,9 @@ public class lightSensor
     /**
     * @brief Retorna a cor mais próxima identificada pelo sensor
     */
-    public string color
+    public Colors color
     {
-        get => sensor.Analog.ToString();
+        get => sensor.Analog.Closest();
     }
 
     /**
@@ -382,92 +482,363 @@ public class lightSensor
     {
         get => !sensor.Digital;
     }
+
+    public bool isGreen
+    {
+        get => green > red + 15 && green > blue + 15;
+    }
+
+    /* metodo antigo
+    bool verde(byte sensor)
+    {
+        float val_vermelho = bot.ReturnRed(sensor);
+        float val_verde = bot.ReturnGreen(sensor);
+        float val_azul = bot.ReturnBlue(sensor);
+        byte media_vermelho = 13, media_verde = 82, media_azul = 4;
+        int RGB = (int)(val_vermelho + val_verde + val_azul);
+        sbyte vermelho = (sbyte)(map(val_vermelho, 0, RGB, 0, 100));
+        sbyte verde = (sbyte)(map(val_verde, 0, RGB, 0, 100));
+        sbyte azul = (sbyte)(map(val_azul, 0, RGB, 0, 100));
+        return ((proximo(vermelho, media_vermelho, 2) && proximo(verde, media_verde, 2) && proximo(azul, media_azul, 2)) || cor(sensor) == "VERDE");
+    }
+    */
 }
 lightSensor[] lineSensors ={
     new lightSensor("S0"),
     new lightSensor("S1"),
     new lightSensor("S2"),
-    new lightSensor("S3"),
-    new lightSensor("S4")
+    new lightSensor("S3")
 };
 
-double error, lastError, P, D, PD;
-int targetPower = 350;
-int turnPower = 400;
-long counter = 0;
-byte blackTreshold = 50;
+
+/**
+* @brief Gerencia um led
+*/
+
+public class led
+{
+    /**
+    * @brief Led a ser gerenciado.
+    */
+    private Light ledLight;
+    private long lastBlink;
+
+    /**
+    * @brief Construtor da classe.
+    *
+    * @param ledName: Nome do led 
+    */
+    public led(string ledName)
+    {
+        this.ledLight = Bot.GetComponent<Light>(ledName);
+    }
+
+    /**
+    * @brief Indica se o led está ligado.
+    *
+    */
+    public bool state
+    {
+        get => ledLight.Lit;
+    }
+
+    /**
+    * @brief Indica a cor atual do led;
+    *
+    */
+    public Color color
+    {
+        get => ledLight.Color;
+    }
+
+    /**
+    * @brief Liga o led com a cor especificada.
+    *
+    * @param color: Cor desejada (padrão vermelho)
+    */
+    public void on(string _color = "Vermelho")
+    {
+        ledLight.TurnOn(Color.ToColor(_color));
+    }
+
+    /**
+    * @brief Desliga o led.
+    *
+    */
+    public void off()
+    {
+        ledLight.TurnOff();
+    }
+
+    /**
+    * @brief Liga ou desliga o led.
+    *
+    * @param _state: Liga o led se verdadeiro
+    */
+    public void set(bool _state)
+    {
+        if (_state)
+            on();
+        else
+            off();
+    }
+
+    /**
+    * @brief Inverte o estado do led
+    *
+    */
+    public void toggle()
+    {
+        set(!state);
+    }
+
+    /**
+    * @brief Pisca o led.
+    *
+    * @param _time: Tempo de piscada (padrão 0.1s)
+    * @param _color: Cor do led (padrão branco)
+    */
+    public void blink(int _time = 100, string _color = "Branco")
+    {
+        if(timer.current < lastBlink + _time)
+            return;
+
+        toggle();
+        lastBlink = timer.current;
+    }
+}
+led[] leds ={
+    new led("L0"),
+    new led("L1"),
+    new led("L2"),
+    new led("L3")
+};
+
+int targetPower = 10;
+int turnPower = 10;
+byte blackTreshold = 15;
+byte blackTresholdTurn = 25;
 byte diffForExit = 15;
 
 byte centerRightLight; // Valor lido do sensor de luz do meio da direita
 byte centerLeftLight;  // Valor lido do sensor de luz do meio da esquerda
 byte rightLight;       // Valor lido do sensor de luz da direita
-byte centerLight;      // Valor lido do sensor de luz do meio
 byte leftLight;        // Valor lido do sensor de luz da esquerda
+
+bool centerRightBlack; // Se o sensor de luz do meio da direita está preto
+bool centerLeftBlack;  // Se o sensor de luz do meio da esquerda está preto
+bool rightBlack;       // Se o sensor de luz da direita está preto
+bool leftBlack;        // Se o sensor de luz da esquerda está preto
+
 bool rightGreen;       // Indica se existe verde na direita
 bool leftGreen;        // Indica se existe verde na esquerda
 
 void readColors(){
     leftLight           = (byte)(lineSensors[0].light);
     centerLeftLight     = (byte)(lineSensors[1].light);
-    centerLight         = (byte)(lineSensors[2].light);
-    centerRightLight    = (byte)(lineSensors[3].light);
-    rightLight          = (byte)(lineSensors[4].light);
+    centerRightLight    = (byte)(lineSensors[2].light);
+    rightLight          = (byte)(lineSensors[3].light);
+
+    leftBlack           = (leftLight < blackTresholdTurn);
+    centerLeftBlack     = (centerLeftLight < blackTreshold);
+    centerRightBlack    = (centerRightLight < blackTreshold);
+    rightBlack          = (rightLight < blackTresholdTurn);
+
+    leftGreen           = (lineSensors[0].isGreen || lineSensors[1].isGreen);
+    rightGreen          = (lineSensors[2].isGreen || lineSensors[3].isGreen);
 }
 
-void runPD()
-{
-    error = (/*(lineSensors[0].light - lineSensors[4].light) * 1.2 + */(lineSensors[1].light - lineSensors[3].light))/* / 2.2*/;
-
-    P = error * 45;
-    D = (error - lastError) * 0;
-    lastError = error;
-
-    PD = P + D;
-
-    robot.move(targetPower + PD, targetPower - PD);
-    IO.PrintLine(Convert.ToInt32(lineSensors[1].light).ToString() + "\t|\t" + Convert.ToInt32(lineSensors[3].light).ToString());
-    counter++;
-
+async Task alignLine(){
+    while(leftBlack || centerLeftBlack){
+        readColors();
+        robot.turn(-10);
+        await timer.delay();
+    }
+    await robot.stop();
+    while(rightBlack || centerRightBlack){
+        readColors();
+        robot.turn(10);
+        await timer.delay();
+    }
+    await robot.stop();
 }
 
- async Task runLineFollower()
-{
+
+
+long lastTurnTime = 0;
+
+async Task returnRoutine(){
+    robot.stop();
     readColors();
-    IO.PrintLine(centerLeftLight.ToString() + "\t" + centerRightLight.ToString());
+    await alignLine();
 
-    if(centerLeftLight < blackTreshold){
-        robot.move(0, 0);
+    leds[0].off();
+    leds[1].off();
+    leds[2].off();
+    leds[3].off();
+    lastTurnTime = timer.current;
+    return;
+}
+
+async Task<bool> checkDeadEnd(){
+    if(leftGreen && rightGreen){
+        leds[0].on("Verde");
+        leds[3].on("Verde");
+        await robot.moveStraightTime(15, 700, 1);
+        await robot.stop(150);
+
+        await robot.turnDegrees(170, 30, 10, true);
+
+        readColors();
+        while(!centerLeftBlack && !centerRightBlack){
+            readColors();
+            robot.turn(10);
+            await timer.delay();
+        }
+        await robot.stop();
+
+        await returnRoutine();
+        return true;
+    }
+    return false;
+}
+
+async Task <bool> checkGreen(){
+    if(timer.current - lastTurnTime < 750)
+        return false;
+
+    int turnForce = 0;
+    if(leftGreen){
+        turnForce = -10;
+        leds[0].on("Verde");
+    }
+    else if(rightGreen){
+        turnForce = 10;
+        leds[3].on("Verde");
+    }
+    else
+        return false;
+
+    await robot.stop(150);
+
+    if(await checkDeadEnd()){
+        return true;
+    }
+
+    readColors();
+
+    if(await checkDeadEnd()){
+        return true;
+    }
+
+    await robot.moveStraightTime(15, 700, 1);
+    await robot.stop(150);
+
+    await robot.turnDegrees(((turnForce > 0) ? 80 : -80), 30, 10, true);
+
+    readColors();
+    while(!centerLeftBlack && !centerRightBlack){
+        readColors();
+        robot.turn(turnForce);
+        await timer.delay();
+    }
+    await robot.stop();
+
+    await returnRoutine();
+    return true;
+}
+
+async Task<bool> checkTurn(){
+    if(timer.current - lastTurnTime < 750)
+        return false;
+
+    if(await checkGreen()){
+        return true;
+    }
+
+    int turnForce = 0;
+    if(leftBlack){
+        leds[0].on();
+        turnForce = -10;
+    }
+    else if (rightBlack){
+        leds[3].on();
+        turnForce = 10;
+    }
+    else
+        return false;
+
+    await robot.stop(150);
+
+    if(await checkGreen()){
+        return true;
+    }
+
+    if(leftBlack && rightBlack){
+        leds[0].on();
+        leds[3].on();
+        await robot.moveStraightTime(15, 600, 1);
+        await robot.stop(150);
+        await returnRoutine();
+    }
+
+    await robot.moveStraightTime(20, 400 , 1);
+    await robot.stop(150);
+
+    readColors();
+    while(!centerLeftBlack && !centerRightBlack){
+        readColors();
+        robot.turn(turnForce);
+        await timer.delay();
+    }
+    await robot.stop();
+
+    await returnRoutine();
+    return true;
+}
+
+async Task runLineFollower()
+{
+    if(centerLeftBlack){
         long timeout = timer.current + 350;
 
         while(timer.current < timeout)
         {
             readColors();
-            if(centerLeftLight > blackTreshold+diffForExit || centerRightLight < blackTreshold || centerLight < blackTreshold)
+            if(await checkTurn())
+                return;
+            if(centerLeftLight > blackTreshold+diffForExit || centerRightBlack)
                 break;
-            robot.turn(-turnPower);
+            robot.turn(-turnPower, 100);
             await timer.delay();
         }
-        robot.move(0, 0);
 
     }
 
-    else if(centerRightLight < blackTreshold){
-        robot.move(0, 0);
+    else if(centerRightBlack){
         long timeout = timer.current + 350;
 
         while(timer.current < timeout)
         {
             readColors();
-            if(centerRightLight > blackTreshold+diffForExit || centerLeftLight < blackTreshold || centerLight < blackTreshold)
+            if(await checkTurn())
+                return;
+            if(centerRightLight > blackTreshold+diffForExit || centerLeftBlack)
                 break;
-            robot.turn(turnPower);
+            robot.turn(turnPower, 100);
             await timer.delay();
         }
-        robot.move(0, 0);
 
     }
 
     robot.moveStraight(targetPower);
+}
+
+async Task runFloor(){
+    readColors();
+    await runLineFollower();
+    await checkTurn();
+    await checkGreen();
 }
 
 async Task setup()
@@ -478,12 +849,20 @@ async Task setup()
     timer.init();
     await timer.delay(300);
     robot.locked = false;
-    await robot.moveStraightTime(100, 300);
+    readColors();
+    await alignLine();
+    await robot.moveStraightTime(10, 300);
+    readColors();
+    await alignLine();
+}
+
+async Task debugLoop()
+{
 }
 
 async Task loop()
 {
-    await runLineFollower();
+    await runFloor();
 }
 
 async Task Main()
@@ -491,7 +870,11 @@ async Task Main()
     await setup();
     for (; ; )
     {
-        await loop();
+        #if(false)
+            await debugLoop();
+        #else
+            await loop();
+        #endif
         await timer.delay();
     }
 }
