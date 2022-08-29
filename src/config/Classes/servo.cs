@@ -42,14 +42,14 @@ public class motor
     }
 
     /**
-	 * @brief Indica a velocidade atual do motor (-500 ~ 500).
+	 * @brief Indica a velocidade atual do motor (-100 ~ 100).
 	 *
 	 * @value (double) Velocidade desejada
 	 */
-    public double velocity
+    public int velocity
     {
-        get => servo.Velocity;
-        set => servo.Target = value;
+        get => (int)(servo.Velocity/5);
+        set => servo.Target = (double)(value*5);
     }
 
     /**
@@ -57,21 +57,21 @@ public class motor
 	 *
 	 * @value (double) Força desejada
 	 */
-    public double force
+    public int force
     {
-        get => servo.Force;
-        set => servo.Force = value;
+        get => (byte)(servo.Force/5);
+        set => servo.Force = (double)(value*5);
     }
 
     /**
 	 * @brief Move o motor na velocidade e força desejadas.
 	 *
-	 * @param _velocity: (double) Velocidade desejada (-500 ~ 500).
-	 * @param _force: (double) Força desejada (0 ~ 500).
+	 * @param _velocity: (int) Velocidade desejada (-100 ~ 100).
+	 * @param _force: (byte) Força desejada (0 ~ 500).
 	 */
-    public void run(double _velocity, double _force = 500)
+    public void run(int _velocity, byte _force = 100)
     {
-        this.velocity = _velocity;
-        this.force = _force;
+        this.velocity = _velocity*5;
+        this.force = _force*5;
     }
 }
