@@ -749,7 +749,7 @@ async Task <bool> checkGreen(){
 }
 
 async Task<bool> checkTurn(){
-    if(timer.current - lastTurnTime < 750)
+    if(timer.current - lastTurnTime < 250)
         return false;
 
     if(await checkGreen()){
