@@ -214,10 +214,54 @@ public class myRobot
         await stop();
     }
 
+    public async Task moveToAngle(int targetAngle, int velocity, byte force = 10){
+        int turnSide = (targetAngle > compass) ? 1 : -1;
+        turnSide = (Math.Abs(targetAngle - compass) > 180) ? -turnSide : turnSide;
+
+        while(!proximity(compass, targetAngle, 20)){
+            turn(velocity * turnSide, force);
+            await timer.delay();
+        }
+
+        while(!proximity(compass, targetAngle, 1)){
+            turn(5 * turnSide, force);
+            await timer.delay();
+        }
+
+        await stop();
+    }
+
+    public async Task alignAngle(){
+
+        await stop();
+        double angle = compass;
+
+        if ((angle > 315) || (angle <= 45))
+        {
+            await moveToAngle(0, 30);
+        }
+        else if ((angle > 45) && (angle <= 135))
+        {
+            await moveToAngle(90, 30);
+        }
+        else if ((angle > 135) && (angle <= 225))
+        {
+            await moveToAngle(180, 30);
+        }
+        else if ((angle > 225) && (angle <= 315))
+        {
+            await moveToAngle(270, 30);
+        }
+        await stop();
+    }
+
     public async Task die(){
         await stop(100);
         locked = true;
         await stop(int.MaxValue);
+        while(true){
+            await timer.delay();
+        }
     }
 
 }
