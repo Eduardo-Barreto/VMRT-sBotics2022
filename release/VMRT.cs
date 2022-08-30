@@ -22,6 +22,12 @@ static int convertDegrees(double degrees){
     return (int)((degrees % 360 + 360) % 360);
 }
 
+static double constrain(double val, double min, double max)
+{
+    // limita um valor (val) entre um intervalo (min~max)
+    return val < min ? min : val > max ? max : val;
+}
+
 public delegate void ActionHandler();
 
 
@@ -393,10 +399,54 @@ public class myRobot
         await stop();
     }
 
+    public async Task moveToAngle(int targetAngle, int velocity, byte force = 10){
+        int turnSide = (targetAngle > compass) ? 1 : -1;
+        turnSide = (Math.Abs(targetAngle - compass) > 180) ? -turnSide : turnSide;
+
+        while(!proximity(compass, targetAngle, 20)){
+            turn(velocity * turnSide, force);
+            await timer.delay();
+        }
+
+        while(!proximity(compass, targetAngle, 1)){
+            turn(5 * turnSide, force);
+            await timer.delay();
+        }
+
+        await stop();
+    }
+
+    public async Task alignAngle(){
+
+        await stop();
+        double angle = compass;
+
+        if ((angle > 315) || (angle <= 45))
+        {
+            await moveToAngle(0, 30);
+        }
+        else if ((angle > 45) && (angle <= 135))
+        {
+            await moveToAngle(90, 30);
+        }
+        else if ((angle > 135) && (angle <= 225))
+        {
+            await moveToAngle(180, 30);
+        }
+        else if ((angle > 225) && (angle <= 315))
+        {
+            await moveToAngle(270, 30);
+        }
+        await stop();
+    }
+
     public async Task die(){
         await stop(100);
         locked = true;
         await stop(int.MaxValue);
+        while(true){
+            await timer.delay();
+        }
     }
 
 }
@@ -614,6 +664,43 @@ led[] leds ={
     new led("L3")
 };
 
+
+/**
+* Gerencia um sensor ultrassônico
+*/
+
+public class ultrasonic{
+    private UltrasonicSensor sensor; // Sensor ultrassônico a ser gerenciado
+    private long lastReadTime = 0;
+    private float lastRead = -1;
+
+    /**
+    * @brief Construtor da classe
+    *
+    *
+    * @param sensorName: (string) nome do sensor
+    */
+    public ultrasonic(string sensorName){
+        this.sensor = Bot.GetComponent<UltrasonicSensor>(sensorName);
+    }
+
+    public float read{
+        get{
+            if(timer.current < lastReadTime + 100)
+                return lastRead;
+
+            lastRead = (float)(sensor.Analog);
+            lastReadTime = timer.current;
+
+            return lastRead;
+        }
+    }
+}
+ultrasonic[] frontUltra ={
+    new ultrasonic("UltraCenter0"),
+    new ultrasonic("UltraCenter1")
+};
+
 int targetPower = 10;
 int turnPower = 10;
 byte blackTreshold = 15;
@@ -668,7 +755,7 @@ async Task alignLine(){
 long lastTurnTime = 0;
 
 async Task returnRoutine(){
-    robot.stop();
+    await robot.stop();
     readColors();
     await alignLine();
 
@@ -834,8 +921,51 @@ async Task runLineFollower()
     robot.moveStraight(targetPower);
 }
 
+
+async Task<bool> checkObstacle(){
+    if(interval(frontUltra[0].read, 0, 2.3f) || interval(frontUltra[1].read, 0, 2.3f)){
+        await robot.stop(200);
+        await robot.alignAngle();
+        await robot.turnDegrees(90, 10);
+        await robot.stop(200);
+        await robot.alignAngle();
+        await robot.moveStraightTime(10, 2000, 1);
+        await robot.stop(200);
+        await robot.turnDegrees(-90, 10);
+        await robot.stop(200);
+        await robot.alignAngle();
+        await robot.moveStraightTime(10, 3000, 1);
+        await robot.stop(200);
+        await robot.turnDegrees(-90, 10);
+        await robot.stop(200);
+        await robot.alignAngle();
+        readColors();
+        while(!leftBlack && !centerLeftBlack && !centerRightBlack && !rightBlack){
+            readColors();
+            robot.moveStraight(10);
+            await timer.delay();
+        }
+        foreach (led light in leds)
+        {
+            light.on();
+        }
+        await robot.moveStraightTime(10, 500, 1);
+        await robot.stop(200);
+        await robot.turnDegrees(90, 10);
+        await robot.stop(200);
+        await alignLine();
+        foreach (led light in leds)
+        {
+            light.off();
+        }
+        return true;
+    }
+    return false;
+}
+
 async Task runFloor(){
     readColors();
+    await checkObstacle();
     await runLineFollower();
     await checkTurn();
     await checkGreen();

@@ -87,8 +87,11 @@ async Task runLineFollower()
     robot.moveStraight(targetPower);
 }
 
+import("routines/obstacle.cs");
+
 async Task runFloor(){
     readColors();
+    await checkObstacle();
     await runLineFollower();
     await checkTurn();
     await checkGreen();

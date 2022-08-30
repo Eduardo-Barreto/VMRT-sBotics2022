@@ -28,3 +28,9 @@ led[] leds ={
     new led("L2"),
     new led("L3")
 };
+
+import("config/Classes/ultrasonic.cs");
+ultrasonic[] frontUltra ={
+    new ultrasonic("UltraCenter0"),
+    new ultrasonic("UltraCenter1")
+};

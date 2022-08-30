@@ -1,7 +1,7 @@
 long lastTurnTime = 0;
 
 async Task returnRoutine(){
-    robot.stop();
+    await robot.stop();
     readColors();
     await alignLine();
 
