@@ -20,3 +20,9 @@ static int convertDegrees(double degrees){
     // converte um angulo em graus para sempre se manter entre 0~360
     return (int)((degrees % 360 + 360) % 360);
 }
+
+static double constrain(double val, double min, double max)
+{
+    // limita um valor (val) entre um intervalo (min~max)
+    return val < min ? min : val > max ? max : val;
+}
