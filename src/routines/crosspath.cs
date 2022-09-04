@@ -5,18 +5,15 @@ async Task returnRoutine(){
     readColors();
     await alignLine();
 
-    leds[0].off();
-    leds[1].off();
-    leds[2].off();
-    leds[3].off();
+    turnOffAllLeds();
     lastTurnTime = timer.current;
     return;
 }
 
 async Task<bool> checkDeadEnd(){
     if(leftGreen && rightGreen){
-        leds[0].on("Verde");
-        leds[3].on("Verde");
+        arrowLeds("Verde", 1);
+        arrowLeds("Verde", 2);
         await robot.moveStraightTime(15, 700, 1);
         await robot.stop(150);
 
@@ -43,11 +40,11 @@ async Task <bool> checkGreen(){
     int turnForce = 0;
     if(leftGreen){
         turnForce = -10;
-        leds[0].on("Verde");
+        arrowLeds("Verde", 1);
     }
     else if(rightGreen){
         turnForce = 10;
-        leds[3].on("Verde");
+        arrowLeds("Verde", 2);
     }
     else
         return false;
@@ -91,28 +88,28 @@ async Task<bool> checkTurn(){
 
     int turnForce = 0;
     if(leftBlack){
-        leds[0].on();
+        arrowLeds("Vermelho", 1);
         turnForce = -10;
     }
     else if (rightBlack){
-        leds[3].on();
+        arrowLeds("Vermelho", 2);
         turnForce = 10;
     }
     else
         return false;
 
+    if(leftBlack && rightBlack){
+        arrowLeds("Vermelho", 1);
+        arrowLeds("Vermelho", 2);
+        await robot.moveStraightTime(15, 600, 1);
+        await robot.stop(150);
+        await returnRoutine();
+    }
+
     await robot.stop(150);
 
     if(await checkGreen()){
         return true;
-    }
-
-    if(leftBlack && rightBlack){
-        leds[0].on();
-        leds[3].on();
-        await robot.moveStraightTime(15, 600, 1);
-        await robot.stop(150);
-        await returnRoutine();
     }
 
     await robot.moveStraightTime(20, 400 , 1);
