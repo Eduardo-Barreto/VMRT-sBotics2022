@@ -22,15 +22,29 @@ lightSensor[] lineSensors ={
 };
 
 import("config/Classes/led.cs");
-led[] leds ={
-    new led("L0"),
-    new led("L1"),
-    new led("L2"),
-    new led("L3")
+led[][] leds ={
+    new led[] {
+        new led("L00"),
+        new led("L01"),
+        new led("L02"),
+        new led("L03")
+    },
+    new led[] {
+        new led("L10"),
+        new led("L11"),
+        new led("L12"),
+        new led("L13")
+    },
+    new led[] {
+        new led("L20"),
+        new led("L21"),
+        new led("L22"),
+        new led("L23")
+    }
 };
 
 import("config/Classes/ultrasonic.cs");
 ultrasonic[] frontUltra ={
-    new ultrasonic("UltraCenter0"),
-    new ultrasonic("UltraCenter1")
+    new ultrasonic("centerUltra0"),
+    new ultrasonic("centerUltra1")
 };
