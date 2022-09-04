@@ -74,4 +74,20 @@ public class motor
         this.velocity = _velocity*5;
         this.force = _force*5;
     }
+
+    public async Task stop(int time = 50, bool _lock = true)
+    {
+        run(-velocity, 100);
+        await timer.delay();
+        run(0, 100);
+        locked = _lock;
+        await timer.delay(time);
+        locked = !_lock;
+    }
+
+    public async Task moveTime(int velocity, int time = 50, byte force = 10){
+        run(velocity, force);
+        await timer.delay(time);
+        await stop();
+    }
 }

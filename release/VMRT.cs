@@ -176,6 +176,22 @@ public class motor
         this.velocity = _velocity*5;
         this.force = _force*5;
     }
+
+    public async Task stop(int time = 50, bool _lock = true)
+    {
+        run(-velocity, 100);
+        await timer.delay();
+        run(0, 100);
+        locked = _lock;
+        await timer.delay(time);
+        locked = !_lock;
+    }
+
+    public async Task moveTime(int velocity, int time = 50, byte force = 10){
+        run(velocity, force);
+        await timer.delay(time);
+        await stop();
+    }
 }
 motor leftMotor = new motor("leftMotor");
 motor rightMotor = new motor("rightMotor");
@@ -379,7 +395,7 @@ public class myRobot
 
     public async Task turnDegrees(int degrees, int velocity, byte force = 10, bool fast = false){
         int turnSide = (degrees > 0) ? 1 : -1;
-        int targetAngle = convertDegrees((compass) + degrees);
+        int targetAngle = convertDegrees(compass + degrees);
 
         while(!proximity(compass, targetAngle, 20)){
             turn(velocity * turnSide, force);
@@ -657,11 +673,25 @@ public class led
         lastBlink = timer.current;
     }
 }
-led[] leds ={
-    new led("L0"),
-    new led("L1"),
-    new led("L2"),
-    new led("L3")
+led[][] leds ={
+    new led[] {
+        new led("L00"),
+        new led("L01"),
+        new led("L02"),
+        new led("L03")
+    },
+    new led[] {
+        new led("L10"),
+        new led("L11"),
+        new led("L12"),
+        new led("L13")
+    },
+    new led[] {
+        new led("L20"),
+        new led("L21"),
+        new led("L22"),
+        new led("L23")
+    }
 };
 
 
@@ -697,9 +727,37 @@ public class ultrasonic{
     }
 }
 ultrasonic[] frontUltra ={
-    new ultrasonic("UltraCenter0"),
-    new ultrasonic("UltraCenter1")
+    new ultrasonic("centerUltra0"),
+    new ultrasonic("centerUltra1")
 };
+
+void lineLeds(string color){
+    for(byte i = 0; i<= 3; i++)
+        leds[1][i].on(color);
+}
+
+void arrowLeds(string color, byte side){
+    lineLeds(color);
+
+    for(byte i = 0; i<= 2; i++)
+        leds[i][side].on(color);
+}
+
+void turnOnAllLeds(string color){
+    foreach(led[] line in leds){
+        foreach(led light in line){
+            light.on(color);
+        }
+    }
+}
+
+void turnOffAllLeds(){
+    foreach(led[] line in leds){
+        foreach(led light in line){
+            light.off();
+        }
+    }
+}
 
 int targetPower = 10;
 int turnPower = 10;
@@ -759,18 +817,15 @@ async Task returnRoutine(){
     readColors();
     await alignLine();
 
-    leds[0].off();
-    leds[1].off();
-    leds[2].off();
-    leds[3].off();
+    turnOffAllLeds();
     lastTurnTime = timer.current;
     return;
 }
 
 async Task<bool> checkDeadEnd(){
     if(leftGreen && rightGreen){
-        leds[0].on("Verde");
-        leds[3].on("Verde");
+        arrowLeds("Verde", 1);
+        arrowLeds("Verde", 2);
         await robot.moveStraightTime(15, 700, 1);
         await robot.stop(150);
 
@@ -797,11 +852,11 @@ async Task <bool> checkGreen(){
     int turnForce = 0;
     if(leftGreen){
         turnForce = -10;
-        leds[0].on("Verde");
+        arrowLeds("Verde", 1);
     }
     else if(rightGreen){
         turnForce = 10;
-        leds[3].on("Verde");
+        arrowLeds("Verde", 2);
     }
     else
         return false;
@@ -845,28 +900,28 @@ async Task<bool> checkTurn(){
 
     int turnForce = 0;
     if(leftBlack){
-        leds[0].on();
+        arrowLeds("Vermelho", 1);
         turnForce = -10;
     }
     else if (rightBlack){
-        leds[3].on();
+        arrowLeds("Vermelho", 2);
         turnForce = 10;
     }
     else
         return false;
 
+    if(leftBlack && rightBlack){
+        arrowLeds("Vermelho", 1);
+        arrowLeds("Vermelho", 2);
+        await robot.moveStraightTime(15, 600, 1);
+        await robot.stop(150);
+        await returnRoutine();
+    }
+
     await robot.stop(150);
 
     if(await checkGreen()){
         return true;
-    }
-
-    if(leftBlack && rightBlack){
-        leds[0].on();
-        leds[3].on();
-        await robot.moveStraightTime(15, 600, 1);
-        await robot.stop(150);
-        await returnRoutine();
     }
 
     await robot.moveStraightTime(20, 400 , 1);
@@ -924,40 +979,40 @@ async Task runLineFollower()
 
 async Task<bool> checkObstacle(){
     if(interval(frontUltra[0].read, 0, 2.3f) || interval(frontUltra[1].read, 0, 2.3f)){
+        turnOnAllLeds("Azul");
         await robot.stop(200);
         await robot.alignAngle();
-        await robot.turnDegrees(90, 10);
+        await robot.turnDegrees(70, 10);
+        await robot.stop(200);
+        await robot.moveStraightTime(10, 1800, 1);
+        await robot.stop(200);
+        await robot.turnDegrees(-70, 10);
         await robot.stop(200);
         await robot.alignAngle();
         await robot.moveStraightTime(10, 2000, 1);
         await robot.stop(200);
-        await robot.turnDegrees(-90, 10);
+        await robot.turnDegrees(-75, 10);
         await robot.stop(200);
-        await robot.alignAngle();
-        await robot.moveStraightTime(10, 3000, 1);
-        await robot.stop(200);
-        await robot.turnDegrees(-90, 10);
-        await robot.stop(200);
-        await robot.alignAngle();
+        turnOnAllLeds("Vermelho");
         readColors();
         while(!leftBlack && !centerLeftBlack && !centerRightBlack && !rightBlack){
             readColors();
             robot.moveStraight(10);
             await timer.delay();
         }
-        foreach (led light in leds)
-        {
-            light.on();
-        }
+        turnOnAllLeds("Azul");
         await robot.moveStraightTime(10, 500, 1);
         await robot.stop(200);
-        await robot.turnDegrees(90, 10);
-        await robot.stop(200);
-        await alignLine();
-        foreach (led light in leds)
-        {
-            light.off();
+        await robot.turnDegrees(50, 10, 10, true);
+        turnOnAllLeds("Vermelho");
+        while(!centerLeftBlack && !centerRightBlack){
+            readColors();
+            robot.turn(10);
+            await timer.delay();
         }
+        await robot.stop();
+        turnOffAllLeds();
+        await alignLine();
         return true;
     }
     return false;

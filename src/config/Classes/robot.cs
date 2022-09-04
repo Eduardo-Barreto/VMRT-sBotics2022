@@ -194,7 +194,7 @@ public class myRobot
 
     public async Task turnDegrees(int degrees, int velocity, byte force = 10, bool fast = false){
         int turnSide = (degrees > 0) ? 1 : -1;
-        int targetAngle = convertDegrees((compass) + degrees);
+        int targetAngle = convertDegrees(compass + degrees);
 
         while(!proximity(compass, targetAngle, 20)){
             turn(velocity * turnSide, force);
