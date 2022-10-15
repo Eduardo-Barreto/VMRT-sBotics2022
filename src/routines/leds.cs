@@ -18,6 +18,22 @@ void turnOnAllLeds(string color){
     }
 }
 
+void turnOnAllLeds(Color color){
+    foreach(led[] line in leds){
+        foreach(led light in line){
+            light.on(color);
+        }
+    }
+}
+
+void turnOnAllLeds(byte red, byte green, byte blue){
+    foreach(led[] line in leds){
+        foreach(led light in line){
+            light.on(red, green, blue);
+        }
+    }
+}
+
 void turnOffAllLeds(){
     foreach(led[] line in leds){
         foreach(led light in line){

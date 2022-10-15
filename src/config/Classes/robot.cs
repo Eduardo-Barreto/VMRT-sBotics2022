@@ -12,6 +12,7 @@ public class myRobot
     private motor rightMotor;
     private motor frontLeftMotor;
     private motor frontRightMotor;
+    private ultrasonic ultra;
 
     /**
 	 * @brief Construtor da classe.
@@ -21,12 +22,13 @@ public class myRobot
      * @param frontLeftMotorName: (String) Nome do motor frontal esquerdo do robo.
      * @param frontRightMotorName: (String) Nome do motor frontal direito do robo.
 	 */
-    public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName)
+    public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName, string ultrasonicName)
     {
         this.leftMotor = new motor(leftMotorName);
         this.rightMotor = new motor(rightMotorName);
         this.frontLeftMotor = new motor(frontLeftMotorName);
         this.frontRightMotor = new motor(frontRightMotorName);
+        this.ultra = new ultrasonic(ultrasonicName);
     }
 
     public double inclination
@@ -218,9 +220,11 @@ public class myRobot
         int turnSide = (targetAngle > compass) ? 1 : -1;
         turnSide = (Math.Abs(targetAngle - compass) > 180) ? -turnSide : turnSide;
 
-        while(!proximity(compass, targetAngle, 20)){
-            turn(velocity * turnSide, force);
-            await timer.delay();
+        if(targetAngle != 0 || compass < 315){
+            while(!proximity(compass, targetAngle, 20)){
+                turn(velocity * turnSide, force);
+                await timer.delay();
+            }
         }
 
         while(!proximity(compass, targetAngle, 1)){
@@ -253,6 +257,21 @@ public class myRobot
             await moveToAngle(270, 30);
         }
         await stop();
+    }
+
+    public async Task alignUltra(int distance, int velocity, byte times = 3, byte force = 10){
+        for(byte i = 1; i <= times; i++){
+            int distanceSide = (distance - ultra.read > 0) ? 1 : -1;
+            IO.PrintLine(i.ToString() + " - " + velocity.ToString() + " - " + (ultra.read).ToString());
+
+            while(!proximity(ultra.read, distance, 0.2f)){
+                velocity = (velocity/i) * distanceSide;
+                move(velocity, velocity, force, force);
+                IO.PrintLine(i.ToString() + " - " + velocity.ToString() + " - " + (ultra.read).ToString());
+                await timer.delay();
+            }
+            await stop(150);
+        }
     }
 
     public async Task die(){

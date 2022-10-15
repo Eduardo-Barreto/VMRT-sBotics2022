@@ -5,6 +5,9 @@
 public class lightSensor
 {
     private ColorSensor sensor; // Sensor de luz a ser gerenciado
+    private byte grayRed;       // Valor de vermelho para o sensor estar em cinza
+    private byte grayGreen;     // Valor de verde para o sensor estar em cinza
+    private byte grayBlue;      // Valor de azul para o sensor estar em cinza
 
     /**
      * @brief Construtor da classe
@@ -64,9 +67,9 @@ public class lightSensor
     /**
     * @brief Retorna a cor mais próxima identificada pelo sensor
     */
-    public Colors color
+    public string color
     {
-        get => sensor.Analog.Closest();
+        get => sensor.Analog.ToString();
     }
 
     /**
@@ -80,6 +83,22 @@ public class lightSensor
     public bool isGreen
     {
         get => green > red + 15 && green > blue + 15;
+    }
+
+    public void setGray(byte red, byte green, byte blue)
+    {
+        this.grayRed = red;
+        this.grayGreen = green;
+        this.grayBlue = blue;
+    }
+
+    public byte isGray
+    {
+        get => (proximity(grayRed, red) && proximity(grayGreen, green) && proximity(grayBlue, blue)) || color == "Azul" ? (byte)(1) : (byte)(0);
+    }
+
+    public byte isRed{
+        get => red > green + 15 && red > blue + 15 ? (byte)(1) : (byte)(0);
     }
 
     /* metodo antigo

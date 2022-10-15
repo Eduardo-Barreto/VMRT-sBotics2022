@@ -17,6 +17,17 @@ bool leftBlack;        // Se o sensor de luz da esquerda está preto
 bool rightGreen;       // Indica se existe verde na direita
 bool leftGreen;        // Indica se existe verde na esquerda
 
+bool gray;            // Indica se existe uma linha cinza
+bool red;             // Indica se existe uma linha vermelha
+
+void setGray(byte red, byte green, byte blue)
+{
+    foreach(lightSensor sensor in lineSensors)
+    {
+        sensor.setGray(red, green, blue);
+    }
+}
+
 void readColors(){
     leftLight           = (byte)(lineSensors[0].light);
     centerLeftLight     = (byte)(lineSensors[1].light);
@@ -30,6 +41,10 @@ void readColors(){
 
     leftGreen           = (lineSensors[0].isGreen || lineSensors[1].isGreen);
     rightGreen          = (lineSensors[2].isGreen || lineSensors[3].isGreen);
+
+    gray = !afterRescue && ((lineSensors[0].isGray + lineSensors[1].isGray + lineSensors[2].isGray + lineSensors[3].isGray) >= 2);
+    red = afterRescue && ((lineSensors[0].isRed + lineSensors[1].isRed + lineSensors[2].isRed + lineSensors[3].isRed) >= 2);
+
 }
 
 async Task alignLine(){
@@ -95,4 +110,10 @@ async Task runFloor(){
     await runLineFollower();
     await checkTurn();
     await checkGreen();
+    if(red){
+        await robot.stop();
+        turnOnAllLeds("Vermelho");
+        IO.PrintLine("That's all folks!");
+        await robot.die();
+    }
 }

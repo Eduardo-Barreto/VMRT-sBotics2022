@@ -43,9 +43,28 @@ public class led
     *
     * @param color: Cor desejada (padrão vermelho)
     */
+    public void on(Color _color){
+        ledLight.TurnOn(_color);
+    }
+
+    /**
+    * @brief Liga o led com a cor especificada.
+    *
+    * @param color: Cor desejada (padrão vermelho)
+    */
     public void on(string _color = "Vermelho")
     {
-        ledLight.TurnOn(Color.ToColor(_color));
+        on(Color.ToColor(_color));
+    }
+
+    /**
+    * @brief Liga o led com a cor especificada.
+    *
+    * @param color: Cor desejada
+    */
+    public void on(byte red, byte green, byte blue)
+    {
+        on(new Color(red, green, blue));
     }
 
     /**

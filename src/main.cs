@@ -2,6 +2,9 @@ import("config/math.cs")
 import("config/createObjects.cs");
 import("routines/leds.cs");
 import("routines/lineFollower.cs");
+import("routines/rescue.cs");
+
+bool afterRescue = false;
 
 async Task setup()
 {
@@ -9,6 +12,7 @@ async Task setup()
     IO.ClearWrite();
     IO.ClearPrint();
     timer.init();
+    setGray(grayRed, grayGreen, grayBlue);
     await timer.delay(300);
     robot.locked = false;
     readColors();
@@ -20,11 +24,22 @@ async Task setup()
 
 async Task debugLoop()
 {
+    await robot.alignAngle();
+    await robot.alignUltra(2, 100, 1);
+    IO.PrintLine("Ultra: " + frontUltra[0].read.ToString());
+    await robot.die();
 }
 
 async Task loop()
 {
     await runFloor();
+    if(gray){
+        await robot.stop();
+        turnOnAllLeds(grayRed, grayGreen, grayBlue);
+        await findExit();
+        gray = false;
+        afterRescue = true;
+    }
 }
 
 async Task Main()

@@ -21,6 +21,15 @@ static int convertDegrees(double degrees){
     return (int)((degrees % 360 + 360) % 360);
 }
 
+static bool degreesProximity(double degrees, double target, double tolerance = 1){
+    // verifica se um angulo (degrees) está proximo de um alvo (target) com tolerância (tolerance)
+    return interval(
+        convertDegrees(degrees),
+        convertDegrees(target - tolerance),
+        convertDegrees(target + tolerance)
+    );
+}
+
 static double constrain(double val, double min, double max)
 {
     // limita um valor (val) entre um intervalo (min~max)

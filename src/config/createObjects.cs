@@ -9,9 +9,18 @@ motor rightMotor = new motor("rightMotor");
 motor frontLeftMotor = new motor("frontLeftMotor");
 motor frontRightMotor = new motor("frontRightMotor");
 
-import("config/Classes/robot.cs");
 
-myRobot robot = new myRobot("leftMotor", "rightMotor", "frontLeftMotor", "frontRightMotor");
+import("config/Classes/ultrasonic.cs");
+ultrasonic[] frontUltra ={
+    new ultrasonic("centerUltra0"),
+    new ultrasonic("centerUltra1")
+};
+
+ultrasonic leftUltra = new ultrasonic("leftUltra");
+
+
+import("config/Classes/robot.cs");
+myRobot robot = new myRobot("leftMotor", "rightMotor", "frontLeftMotor", "frontRightMotor", "centerUltra0");
 
 import("config/Classes/light.cs");
 lightSensor[] lineSensors ={
@@ -24,10 +33,10 @@ lightSensor[] lineSensors ={
 import("config/Classes/led.cs");
 led[][] leds ={
     new led[] {
-        new led("L00"),
+        new led("L01"),
         new led("L01"),
         new led("L02"),
-        new led("L03")
+        new led("L02")
     },
     new led[] {
         new led("L10"),
@@ -41,10 +50,4 @@ led[][] leds ={
         new led("L22"),
         new led("L23")
     }
-};
-
-import("config/Classes/ultrasonic.cs");
-ultrasonic[] frontUltra ={
-    new ultrasonic("centerUltra0"),
-    new ultrasonic("centerUltra1")
 };

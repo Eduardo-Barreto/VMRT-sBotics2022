@@ -14,8 +14,9 @@ async Task<bool> checkDeadEnd(){
     if(leftGreen && rightGreen){
         arrowLeds("Verde", 1);
         arrowLeds("Verde", 2);
-        await robot.moveStraightTime(15, 700, 1);
         await robot.stop(150);
+        await robot.moveStraightTime(15, 700, 1);
+        await robot.stop(500);
 
         await robot.turnDegrees(170, 30, 10, true);
 
@@ -37,6 +38,9 @@ async Task <bool> checkGreen(){
     if(timer.current - lastTurnTime < 750)
         return false;
 
+    if(gray)
+        return true;
+
     int turnForce = 0;
     if(leftGreen){
         turnForce = -10;
@@ -51,15 +55,13 @@ async Task <bool> checkGreen(){
 
     await robot.stop(150);
 
-    if(await checkDeadEnd()){
+    if(await checkDeadEnd())
         return true;
-    }
 
     readColors();
 
-    if(await checkDeadEnd()){
+    if(await checkDeadEnd())
         return true;
-    }
 
     await robot.moveStraightTime(15, 700, 1);
     await robot.stop(150);
@@ -82,9 +84,11 @@ async Task<bool> checkTurn(){
     if(timer.current - lastTurnTime < 250)
         return false;
 
-    if(await checkGreen()){
+    if(gray)
         return true;
-    }
+
+    if(await checkGreen())
+        return true;
 
     int turnForce = 0;
     if(leftBlack){
