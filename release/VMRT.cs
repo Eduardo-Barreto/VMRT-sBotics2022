@@ -22,6 +22,15 @@ static int convertDegrees(double degrees){
     return (int)((degrees % 360 + 360) % 360);
 }
 
+static bool degreesProximity(double degrees, double target, double tolerance = 1){
+    // verifica se um angulo (degrees) está proximo de um alvo (target) com tolerância (tolerance)
+    return interval(
+        convertDegrees(degrees),
+        convertDegrees(target - tolerance),
+        convertDegrees(target + tolerance)
+    );
+}
+
 static double constrain(double val, double min, double max)
 {
     // limita um valor (val) entre um intervalo (min~max)
@@ -199,6 +208,47 @@ motor frontLeftMotor = new motor("frontLeftMotor");
 motor frontRightMotor = new motor("frontRightMotor");
 
 
+
+/**
+* Gerencia um sensor ultrassônico
+*/
+
+public class ultrasonic{
+    private UltrasonicSensor sensor; // Sensor ultrassônico a ser gerenciado
+    private long lastReadTime = 0;
+    private float lastRead = -1;
+
+    /**
+    * @brief Construtor da classe
+    *
+    *
+    * @param sensorName: (string) nome do sensor
+    */
+    public ultrasonic(string sensorName){
+        this.sensor = Bot.GetComponent<UltrasonicSensor>(sensorName);
+    }
+
+    public float read{
+        get{
+            if(timer.current < lastReadTime + 100)
+                return lastRead;
+
+            lastRead = (float)(sensor.Analog);
+            lastReadTime = timer.current;
+
+            return lastRead;
+        }
+    }
+}
+ultrasonic[] frontUltra ={
+    new ultrasonic("centerUltra0"),
+    new ultrasonic("centerUltra1")
+};
+
+ultrasonic leftUltra = new ultrasonic("leftUltra");
+
+
+
 /**
  * @brief Gerencia a base do robô
  *
@@ -213,6 +263,7 @@ public class myRobot
     private motor rightMotor;
     private motor frontLeftMotor;
     private motor frontRightMotor;
+    private ultrasonic ultra;
 
     /**
 	 * @brief Construtor da classe.
@@ -222,12 +273,13 @@ public class myRobot
      * @param frontLeftMotorName: (String) Nome do motor frontal esquerdo do robo.
      * @param frontRightMotorName: (String) Nome do motor frontal direito do robo.
 	 */
-    public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName)
+    public myRobot(string leftMotorName, string rightMotorName, string frontLeftMotorName, string frontRightMotorName, string ultrasonicName)
     {
         this.leftMotor = new motor(leftMotorName);
         this.rightMotor = new motor(rightMotorName);
         this.frontLeftMotor = new motor(frontLeftMotorName);
         this.frontRightMotor = new motor(frontRightMotorName);
+        this.ultra = new ultrasonic(ultrasonicName);
     }
 
     public double inclination
@@ -419,9 +471,11 @@ public class myRobot
         int turnSide = (targetAngle > compass) ? 1 : -1;
         turnSide = (Math.Abs(targetAngle - compass) > 180) ? -turnSide : turnSide;
 
-        while(!proximity(compass, targetAngle, 20)){
-            turn(velocity * turnSide, force);
-            await timer.delay();
+        if(targetAngle != 0 || compass < 315){
+            while(!proximity(compass, targetAngle, 20)){
+                turn(velocity * turnSide, force);
+                await timer.delay();
+            }
         }
 
         while(!proximity(compass, targetAngle, 1)){
@@ -456,6 +510,21 @@ public class myRobot
         await stop();
     }
 
+    public async Task alignUltra(int distance, int velocity, byte times = 3, byte force = 10){
+        for(byte i = 1; i <= times; i++){
+            int distanceSide = (distance - ultra.read > 0) ? 1 : -1;
+            IO.PrintLine(i.ToString() + " - " + velocity.ToString() + " - " + (ultra.read).ToString());
+
+            while(!proximity(ultra.read, distance, 0.2f)){
+                velocity = (velocity/i) * distanceSide;
+                move(velocity, velocity, force, force);
+                IO.PrintLine(i.ToString() + " - " + velocity.ToString() + " - " + (ultra.read).ToString());
+                await timer.delay();
+            }
+            await stop(150);
+        }
+    }
+
     public async Task die(){
         await stop(100);
         locked = true;
@@ -466,8 +535,7 @@ public class myRobot
     }
 
 }
-
-myRobot robot = new myRobot("leftMotor", "rightMotor", "frontLeftMotor", "frontRightMotor");
+myRobot robot = new myRobot("leftMotor", "rightMotor", "frontLeftMotor", "frontRightMotor", "centerUltra0");
 
 
 /**
@@ -477,6 +545,9 @@ myRobot robot = new myRobot("leftMotor", "rightMotor", "frontLeftMotor", "frontR
 public class lightSensor
 {
     private ColorSensor sensor; // Sensor de luz a ser gerenciado
+    private byte grayRed;       // Valor de vermelho para o sensor estar em cinza
+    private byte grayGreen;     // Valor de verde para o sensor estar em cinza
+    private byte grayBlue;      // Valor de azul para o sensor estar em cinza
 
     /**
      * @brief Construtor da classe
@@ -536,9 +607,9 @@ public class lightSensor
     /**
     * @brief Retorna a cor mais próxima identificada pelo sensor
     */
-    public Colors color
+    public string color
     {
-        get => sensor.Analog.Closest();
+        get => sensor.Analog.ToString();
     }
 
     /**
@@ -552,6 +623,22 @@ public class lightSensor
     public bool isGreen
     {
         get => green > red + 15 && green > blue + 15;
+    }
+
+    public void setGray(byte red, byte green, byte blue)
+    {
+        this.grayRed = red;
+        this.grayGreen = green;
+        this.grayBlue = blue;
+    }
+
+    public byte isGray
+    {
+        get => (proximity(grayRed, red) && proximity(grayGreen, green) && proximity(grayBlue, blue)) || color == "Azul" ? (byte)(1) : (byte)(0);
+    }
+
+    public byte isRed{
+        get => red > green + 15 && red > blue + 15 ? (byte)(1) : (byte)(0);
     }
 
     /* metodo antigo
@@ -622,9 +709,28 @@ public class led
     *
     * @param color: Cor desejada (padrão vermelho)
     */
+    public void on(Color _color){
+        ledLight.TurnOn(_color);
+    }
+
+    /**
+    * @brief Liga o led com a cor especificada.
+    *
+    * @param color: Cor desejada (padrão vermelho)
+    */
     public void on(string _color = "Vermelho")
     {
-        ledLight.TurnOn(Color.ToColor(_color));
+        on(Color.ToColor(_color));
+    }
+
+    /**
+    * @brief Liga o led com a cor especificada.
+    *
+    * @param color: Cor desejada
+    */
+    public void on(byte red, byte green, byte blue)
+    {
+        on(new Color(red, green, blue));
     }
 
     /**
@@ -675,10 +781,10 @@ public class led
 }
 led[][] leds ={
     new led[] {
-        new led("L00"),
+        new led("L01"),
         new led("L01"),
         new led("L02"),
-        new led("L03")
+        new led("L02")
     },
     new led[] {
         new led("L10"),
@@ -692,43 +798,6 @@ led[][] leds ={
         new led("L22"),
         new led("L23")
     }
-};
-
-
-/**
-* Gerencia um sensor ultrassônico
-*/
-
-public class ultrasonic{
-    private UltrasonicSensor sensor; // Sensor ultrassônico a ser gerenciado
-    private long lastReadTime = 0;
-    private float lastRead = -1;
-
-    /**
-    * @brief Construtor da classe
-    *
-    *
-    * @param sensorName: (string) nome do sensor
-    */
-    public ultrasonic(string sensorName){
-        this.sensor = Bot.GetComponent<UltrasonicSensor>(sensorName);
-    }
-
-    public float read{
-        get{
-            if(timer.current < lastReadTime + 100)
-                return lastRead;
-
-            lastRead = (float)(sensor.Analog);
-            lastReadTime = timer.current;
-
-            return lastRead;
-        }
-    }
-}
-ultrasonic[] frontUltra ={
-    new ultrasonic("centerUltra0"),
-    new ultrasonic("centerUltra1")
 };
 
 void lineLeds(string color){
@@ -747,6 +816,22 @@ void turnOnAllLeds(string color){
     foreach(led[] line in leds){
         foreach(led light in line){
             light.on(color);
+        }
+    }
+}
+
+void turnOnAllLeds(Color color){
+    foreach(led[] line in leds){
+        foreach(led light in line){
+            light.on(color);
+        }
+    }
+}
+
+void turnOnAllLeds(byte red, byte green, byte blue){
+    foreach(led[] line in leds){
+        foreach(led light in line){
+            light.on(red, green, blue);
         }
     }
 }
@@ -778,6 +863,17 @@ bool leftBlack;        // Se o sensor de luz da esquerda está preto
 bool rightGreen;       // Indica se existe verde na direita
 bool leftGreen;        // Indica se existe verde na esquerda
 
+bool gray;            // Indica se existe uma linha cinza
+bool red;             // Indica se existe uma linha vermelha
+
+void setGray(byte red, byte green, byte blue)
+{
+    foreach(lightSensor sensor in lineSensors)
+    {
+        sensor.setGray(red, green, blue);
+    }
+}
+
 void readColors(){
     leftLight           = (byte)(lineSensors[0].light);
     centerLeftLight     = (byte)(lineSensors[1].light);
@@ -791,6 +887,10 @@ void readColors(){
 
     leftGreen           = (lineSensors[0].isGreen || lineSensors[1].isGreen);
     rightGreen          = (lineSensors[2].isGreen || lineSensors[3].isGreen);
+
+    gray = !afterRescue && ((lineSensors[0].isGray + lineSensors[1].isGray + lineSensors[2].isGray + lineSensors[3].isGray) >= 2);
+    red = afterRescue && ((lineSensors[0].isRed + lineSensors[1].isRed + lineSensors[2].isRed + lineSensors[3].isRed) >= 2);
+
 }
 
 async Task alignLine(){
@@ -826,8 +926,9 @@ async Task<bool> checkDeadEnd(){
     if(leftGreen && rightGreen){
         arrowLeds("Verde", 1);
         arrowLeds("Verde", 2);
-        await robot.moveStraightTime(15, 700, 1);
         await robot.stop(150);
+        await robot.moveStraightTime(15, 700, 1);
+        await robot.stop(500);
 
         await robot.turnDegrees(170, 30, 10, true);
 
@@ -849,6 +950,9 @@ async Task <bool> checkGreen(){
     if(timer.current - lastTurnTime < 750)
         return false;
 
+    if(gray)
+        return true;
+
     int turnForce = 0;
     if(leftGreen){
         turnForce = -10;
@@ -863,15 +967,13 @@ async Task <bool> checkGreen(){
 
     await robot.stop(150);
 
-    if(await checkDeadEnd()){
+    if(await checkDeadEnd())
         return true;
-    }
 
     readColors();
 
-    if(await checkDeadEnd()){
+    if(await checkDeadEnd())
         return true;
-    }
 
     await robot.moveStraightTime(15, 700, 1);
     await robot.stop(150);
@@ -894,9 +996,11 @@ async Task<bool> checkTurn(){
     if(timer.current - lastTurnTime < 250)
         return false;
 
-    if(await checkGreen()){
+    if(gray)
         return true;
-    }
+
+    if(await checkGreen())
+        return true;
 
     int turnForce = 0;
     if(leftBlack){
@@ -1024,7 +1128,124 @@ async Task runFloor(){
     await runLineFollower();
     await checkTurn();
     await checkGreen();
+    if(red){
+        await robot.stop();
+        turnOnAllLeds("Vermelho");
+        IO.PrintLine("That's all folks!");
+        await robot.die();
+    }
 }
+
+const byte grayRed = 77;
+const byte grayGreen = 85;
+const byte grayBlue = 96;
+
+double lastCompass = 0;
+byte exitReason = 0;
+/*
+0 -> None
+1 -> Triângulo (colisão)
+2 -> Parede (ultra)
+3 -> Timeout
+*/
+
+bool checkColision(){
+    if(!proximity(robot.compass, lastCompass, 2)){
+        return true;
+    }
+
+    lastCompass = robot.compass;
+    return false;
+}
+
+async Task findExit(){
+    await robot.stop(150);
+    await robot.alignAngle();
+
+    await robot.moveStraightTime(30, 2500, 1);
+    await robot.stop(300);
+    await robot.alignAngle();
+    await robot.stop(300);
+
+    while(true){
+        exitReason = 3;
+        long timeout = timer.current + 8000;
+        lastCompass = robot.compass;
+        while(timer.current < timeout){
+            robot.moveStraight(15);
+            await timer.delay();
+
+            if(interval(frontUltra[0].read, 0, 3.2f) || interval(frontUltra[1].read, 0, 3.2f)){
+                exitReason = 2;
+                break;
+            }
+
+            if(checkColision() && interval(frontUltra[1].read, 0, 12)){
+                exitReason = 1;
+                break;
+            }
+
+            if(lineSensors[0].isGreen && lineSensors[1].isGreen && lineSensors[2].isGreen && lineSensors[3].isGreen){
+                await robot.moveStraightTime(30, 150, 1);
+                await returnRoutine();
+                return;
+            }
+
+            if(leftUltra.read > 8 || leftUltra.read < 0){
+                turnOnAllLeds("Azul");
+                if(exitReason == 1)
+                    await robot.moveStraightTime(10, 500, 1);
+                else
+                    await robot.moveStraightTime(10, 1750, 1);
+
+                await robot.stop(150);
+                await robot.alignAngle();
+                await robot.turnDegrees(-85, 20);
+                await robot.alignAngle();
+                turnOnAllLeds("Verde");
+                while(!lineSensors[0].isGreen && !lineSensors[1].isGreen && !lineSensors[2].isGreen && !lineSensors[3].isGreen){
+                    robot.moveStraight(15);
+                    await timer.delay();
+                }
+                await timer.delay(300);
+                await robot.stop(150);
+                await returnRoutine();
+                return;
+            }
+        }
+        await robot.stop(150);
+        await robot.moveStraightTime(-10, 500, 1);
+        await robot.alignAngle();
+
+        switch(exitReason){
+            case 1:  // Triângulo
+                await robot.turnDegrees(45, 30);
+                await robot.moveStraightTime(30, 1250, 1);
+                await robot.stop(150);
+                await robot.turnDegrees(45, 30);
+                await robot.alignAngle();
+                await robot.stop(150);
+                await robot.alignAngle();
+                break;
+
+            case 2:  // Parede
+                await robot.moveStraightTime(-10, 400, 1);
+                await robot.alignAngle();
+                await robot.turnDegrees(90, 30);
+                await robot.alignAngle();
+                await robot.stop(150);
+                await robot.alignAngle();
+                break;
+
+            default:
+                await robot.moveStraightTime(30, 100, 1);
+                await returnRoutine();
+                return;
+        }
+    }
+}
+
+bool afterRescue = false;
 
 async Task setup()
 {
@@ -1032,6 +1253,7 @@ async Task setup()
     IO.ClearWrite();
     IO.ClearPrint();
     timer.init();
+    setGray(grayRed, grayGreen, grayBlue);
     await timer.delay(300);
     robot.locked = false;
     readColors();
@@ -1043,11 +1265,22 @@ async Task setup()
 
 async Task debugLoop()
 {
+    await robot.alignAngle();
+    await robot.alignUltra(2, 100, 1);
+    IO.PrintLine("Ultra: " + frontUltra[0].read.ToString());
+    await robot.die();
 }
 
 async Task loop()
 {
     await runFloor();
+    if(gray){
+        await robot.stop();
+        turnOnAllLeds(grayRed, grayGreen, grayBlue);
+        await findExit();
+        gray = false;
+        afterRescue = true;
+    }
 }
 
 async Task Main()
