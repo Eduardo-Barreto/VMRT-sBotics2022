@@ -1118,7 +1118,8 @@ async Task getLine(byte times = 3){
         }
 
         await robot.stop();
-        await robot.moveStraightTime(10, 100);
+        await robot.moveStraightTime(10, 300);
+        await robot.stop();
     }
 
 }
