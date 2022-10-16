@@ -24,9 +24,7 @@ async Task setup()
 
 async Task debugLoop()
 {
-    await robot.alignAngle();
-    await robot.alignUltra(2, 100, 1);
-    IO.PrintLine("Ultra: " + frontUltra[0].read.ToString());
+    await getLine();
     await robot.die();
 }
 
@@ -37,6 +35,10 @@ async Task loop()
         await robot.stop();
         turnOnAllLeds(grayRed, grayGreen, grayBlue);
         await findExit();
+        await robot.moveStraightTime(10, 200, 1);
+        await getLine();
+        await getLine();
+        IO.PrintLine("Saiu do loop");
         gray = false;
         afterRescue = true;
     }

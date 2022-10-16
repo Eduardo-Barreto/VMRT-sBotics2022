@@ -28,16 +28,16 @@ void setGray(byte red, byte green, byte blue)
     }
 }
 
-void readColors(){
+void readColors(int offset = 0){
     leftLight           = (byte)(lineSensors[0].light);
     centerLeftLight     = (byte)(lineSensors[1].light);
     centerRightLight    = (byte)(lineSensors[2].light);
     rightLight          = (byte)(lineSensors[3].light);
 
-    leftBlack           = (leftLight < blackTresholdTurn);
-    centerLeftBlack     = (centerLeftLight < blackTreshold);
-    centerRightBlack    = (centerRightLight < blackTreshold);
-    rightBlack          = (rightLight < blackTresholdTurn);
+    leftBlack           = (leftLight < blackTresholdTurn + offset);
+    centerLeftBlack     = (centerLeftLight < blackTreshold + offset);
+    centerRightBlack    = (centerRightLight < blackTreshold + offset);
+    rightBlack          = (rightLight < blackTresholdTurn + offset);
 
     leftGreen           = (lineSensors[0].isGreen || lineSensors[1].isGreen);
     rightGreen          = (lineSensors[2].isGreen || lineSensors[3].isGreen);
@@ -119,18 +119,18 @@ async Task runFloor(){
 }
 
 async Task getLine(){
-    readColors();
-    long timeout = timer.current + 1000;
-    while(timer.current < timeout && !leftLight && !centerLeftLight && !centerRightLight && !rightLight){
-        readColors();
+    readColors(-10);
+    long timeout = timer.current + 1500;
+    while(timer.current < timeout && !leftBlack && !centerLeftBlack && !centerRightBlack && !rightBlack){
+        readColors(-10);
         robot.turn(10);
         await timer.delay();
     }
     robot.stop();
 
-    timeout = timer.current + 1000;
-    while(timer.current < timeout && !leftLight && !centerLeftLight && !centerRightLight && !rightLight){
-        readColors();
+    timeout = timer.current + 3000;
+    while(timer.current < timeout && !leftBlack && !centerLeftBlack && !centerRightBlack && !rightBlack){
+        readColors(-10);
         robot.turn(-10);
         await timer.delay();
     }

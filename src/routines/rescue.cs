@@ -12,7 +12,8 @@ byte exitReason = 0;
 */
 
 bool checkColision(){
-    if(!proximity(robot.compass, lastCompass, 2)){
+    if(!proximity(robot.compass, lastCompass, 2) && Math.Abs(robot.compass - lastCompass) < 355){
+        IO.PrintLine(robot.compass.ToString() + " | " + lastCompass.ToString());
         return true;
     }
 
@@ -31,7 +32,7 @@ async Task findExit(){
 
     while(true){
         exitReason = 3;
-        long timeout = timer.current + 8000;
+        long timeout = timer.current + 8500;
         lastCompass = robot.compass;
         while(timer.current < timeout){
             robot.moveStraight(15);
@@ -48,6 +49,8 @@ async Task findExit(){
             }
 
             if(lineSensors[0].isGreen && lineSensors[1].isGreen && lineSensors[2].isGreen && lineSensors[3].isGreen){
+                await robot.stop(100);
+                await robot.alignAngle();
                 await robot.moveStraightTime(30, 150, 1);
                 await returnRoutine();
                 return;
@@ -57,8 +60,10 @@ async Task findExit(){
                 turnOnAllLeds("Azul");
                 if(exitReason == 1)
                     await robot.moveStraightTime(10, 500, 1);
-                else
+                else if(exitReason == 3)
                     await robot.moveStraightTime(10, 1750, 1);
+                else
+                    await robot.moveStraightTime(10, 1000, 1);
 
                 await robot.stop(150);
                 await robot.alignAngle();
@@ -75,6 +80,7 @@ async Task findExit(){
                 return;
             }
         }
+        IO.PrintLine(exitReason.ToString());
         await robot.stop(150);
         await robot.moveStraightTime(-10, 500, 1);
         await robot.alignAngle();
@@ -91,7 +97,9 @@ async Task findExit(){
                 break;
 
             case 2:  // Parede
-                await robot.moveStraightTime(-10, 400, 1);
+                await robot.moveStraightTime(10, 1400, 1);
+                await robot.stop(150);
+                await robot.moveStraightTime(-10, 1500, 1);
                 await robot.alignAngle();
                 await robot.turnDegrees(90, 30);
                 await robot.alignAngle();
