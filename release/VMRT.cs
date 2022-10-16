@@ -909,7 +909,6 @@ async Task alignLine(){
 }
 
 
-
 long lastTurnTime = 0;
 
 async Task returnRoutine(){
@@ -1080,6 +1079,37 @@ async Task runLineFollower()
     robot.moveStraight(targetPower);
 }
 
+async Task getLine(byte times = 3){
+    for(int i = 0; i < times; i++){
+        readColors(-10);
+        long timeout = timer.current + 1500 + (300 * i);
+        while(timer.current < timeout){
+            readColors(-10);
+            robot.turn(10);
+            await timer.delay();
+
+            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+                return;
+            }
+        }
+        await robot.stop();
+
+        timeout = timer.current + 3000 + (300 * i);
+        while(timer.current < timeout){
+            readColors(-10);
+            robot.turn(-10);
+            await timer.delay();
+
+            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+                return;
+            }
+        }
+        await robot.stop();
+        await robot.moveStraightTime(10, 100);
+    }
+
+}
+
 
 async Task<bool> checkObstacle(){
     if(interval(frontUltra[0].read, 0, 2.3f) || interval(frontUltra[1].read, 0, 2.3f)){
@@ -1131,40 +1161,9 @@ async Task runFloor(){
     if(red){
         await robot.stop();
         turnOnAllLeds("Vermelho");
-        IO.PrintLine("That's all folks!");
+        IO.PrintLine("<b><size=12><align=center>That's all folks!</align></size></b>\n");
         await robot.die();
     }
-}
-
-async Task getLine(byte times = 3){
-    for(int i = 0; i < times; i++){
-        readColors(-10);
-        long timeout = timer.current + 1500 + (300 * i);
-        while(timer.current < timeout){
-            readColors(-10);
-            robot.turn(10);
-            await timer.delay();
-
-            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
-                return;
-            }
-        }
-        robot.stop();
-
-        timeout = timer.current + 3000 + (300 * i);
-        while(timer.current < timeout){
-            readColors(-10);
-            robot.turn(-10);
-            await timer.delay();
-
-            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
-                return;
-            }
-        }
-        robot.stop();
-        robot.moveStraightTime(10, 100);
-    }
-
 }
 
 const byte grayRed = 77;
@@ -1296,6 +1295,7 @@ async Task setup()
     await robot.moveStraightTime(10, 300);
     readColors();
     await alignLine();
+    IO.PrintLine("<color=#2aaae1><b><size=27><align=center>https://github.com/Eduardo-Barreto/VMRT-sBotics2022</align></size></b></color>\n");
 }
 
 async Task debugLoop()

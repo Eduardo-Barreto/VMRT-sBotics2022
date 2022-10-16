@@ -20,6 +20,7 @@ async Task setup()
     await robot.moveStraightTime(10, 300);
     readColors();
     await alignLine();
+    IO.PrintLine("<color=#2aaae1><b><size=27><align=center>https://github.com/Eduardo-Barreto/VMRT-sBotics2022</align></size></b></color>\n");
 }
 
 async Task debugLoop()
