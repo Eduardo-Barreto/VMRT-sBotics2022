@@ -62,7 +62,6 @@ async Task alignLine(){
     await robot.stop();
 }
 
-
 import("routines/crosspath.cs");
 
 async Task runLineFollower()
@@ -102,22 +101,6 @@ async Task runLineFollower()
     robot.moveStraight(targetPower);
 }
 
-import("routines/obstacle.cs");
-
-async Task runFloor(){
-    readColors();
-    await checkObstacle();
-    await runLineFollower();
-    await checkTurn();
-    await checkGreen();
-    if(red){
-        await robot.stop();
-        turnOnAllLeds("Vermelho");
-        IO.PrintLine("That's all folks!");
-        await robot.die();
-    }
-}
-
 async Task getLine(byte times = 3){
     for(int i = 0; i < times; i++){
         readColors(-10);
@@ -131,7 +114,7 @@ async Task getLine(byte times = 3){
                 return;
             }
         }
-        robot.stop();
+        await robot.stop();
 
         timeout = timer.current + 3000 + (300 * i);
         while(timer.current < timeout){
@@ -143,8 +126,24 @@ async Task getLine(byte times = 3){
                 return;
             }
         }
-        robot.stop();
-        robot.moveStraightTime(10, 100);
+        await robot.stop();
+        await robot.moveStraightTime(10, 100);
     }
 
+}
+
+import("routines/obstacle.cs");
+
+async Task runFloor(){
+    readColors();
+    await checkObstacle();
+    await runLineFollower();
+    await checkTurn();
+    await checkGreen();
+    if(red){
+        await robot.stop();
+        turnOnAllLeds("Vermelho");
+        IO.PrintLine("<b><size=12><align=center>That's all folks!</align></size></b>\n");
+        await robot.die();
+    }
 }
