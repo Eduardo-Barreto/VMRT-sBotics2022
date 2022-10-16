@@ -127,6 +127,19 @@ async Task getLine(byte times = 3){
             }
         }
         await robot.stop();
+
+        timeout = timer.current + 1500 + (300 * i);
+        while(timer.current < timeout){
+            readColors(-10);
+            robot.turn(10);
+            await timer.delay();
+
+            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+                return;
+            }
+        }
+
+        await robot.stop();
         await robot.moveStraightTime(10, 100);
     }
 
