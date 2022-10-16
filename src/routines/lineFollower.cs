@@ -117,3 +117,22 @@ async Task runFloor(){
         await robot.die();
     }
 }
+
+async Task getLine(){
+    readColors();
+    long timeout = timer.current + 1000;
+    while(timer.current < timeout && !leftLight && !centerLeftLight && !centerRightLight && !rightLight){
+        readColors();
+        robot.turn(10);
+        await timer.delay();
+    }
+    robot.stop();
+
+    timeout = timer.current + 1000;
+    while(timer.current < timeout && !leftLight && !centerLeftLight && !centerRightLight && !rightLight){
+        readColors();
+        robot.turn(-10);
+        await timer.delay();
+    }
+    robot.stop();
+}
