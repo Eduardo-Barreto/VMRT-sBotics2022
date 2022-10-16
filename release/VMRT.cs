@@ -874,16 +874,16 @@ void setGray(byte red, byte green, byte blue)
     }
 }
 
-void readColors(){
+void readColors(int offset = 0){
     leftLight           = (byte)(lineSensors[0].light);
     centerLeftLight     = (byte)(lineSensors[1].light);
     centerRightLight    = (byte)(lineSensors[2].light);
     rightLight          = (byte)(lineSensors[3].light);
 
-    leftBlack           = (leftLight < blackTresholdTurn);
-    centerLeftBlack     = (centerLeftLight < blackTreshold);
-    centerRightBlack    = (centerRightLight < blackTreshold);
-    rightBlack          = (rightLight < blackTresholdTurn);
+    leftBlack           = (leftLight < blackTresholdTurn + offset);
+    centerLeftBlack     = (centerLeftLight < blackTreshold + offset);
+    centerRightBlack    = (centerRightLight < blackTreshold + offset);
+    rightBlack          = (rightLight < blackTresholdTurn + offset);
 
     leftGreen           = (lineSensors[0].isGreen || lineSensors[1].isGreen);
     rightGreen          = (lineSensors[2].isGreen || lineSensors[3].isGreen);
@@ -1136,6 +1136,37 @@ async Task runFloor(){
     }
 }
 
+async Task getLine(byte times = 3){
+    for(int i = 0; i < times; i++){
+        readColors(-10);
+        long timeout = timer.current + 1500 + (300 * i);
+        while(timer.current < timeout){
+            readColors(-10);
+            robot.turn(10);
+            await timer.delay();
+
+            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+                return;
+            }
+        }
+        robot.stop();
+
+        timeout = timer.current + 3000 + (300 * i);
+        while(timer.current < timeout){
+            readColors(-10);
+            robot.turn(-10);
+            await timer.delay();
+
+            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+                return;
+            }
+        }
+        robot.stop();
+        robot.moveStraightTime(10, 100);
+    }
+
+}
+
 const byte grayRed = 77;
 const byte grayGreen = 85;
 const byte grayBlue = 96;
@@ -1150,7 +1181,7 @@ byte exitReason = 0;
 */
 
 bool checkColision(){
-    if(!proximity(robot.compass, lastCompass, 2)){
+    if(!proximity(robot.compass, lastCompass, 2) && Math.Abs(robot.compass - lastCompass) < 355){
         return true;
     }
 
@@ -1167,9 +1198,9 @@ async Task findExit(){
     await robot.alignAngle();
     await robot.stop(300);
 
+    exitReason = 3;
     while(true){
-        exitReason = 3;
-        long timeout = timer.current + 8000;
+        long timeout = timer.current + 9500;
         lastCompass = robot.compass;
         while(timer.current < timeout){
             robot.moveStraight(15);
@@ -1186,6 +1217,8 @@ async Task findExit(){
             }
 
             if(lineSensors[0].isGreen && lineSensors[1].isGreen && lineSensors[2].isGreen && lineSensors[3].isGreen){
+                await robot.stop(100);
+                await robot.alignAngle();
                 await robot.moveStraightTime(30, 150, 1);
                 await returnRoutine();
                 return;
@@ -1193,10 +1226,10 @@ async Task findExit(){
 
             if(leftUltra.read > 8 || leftUltra.read < 0){
                 turnOnAllLeds("Azul");
-                if(exitReason == 1)
-                    await robot.moveStraightTime(10, 500, 1);
-                else
+                if(exitReason == 3)
                     await robot.moveStraightTime(10, 1750, 1);
+                else
+                    await robot.moveStraightTime(10, 1500, 1);
 
                 await robot.stop(150);
                 await robot.alignAngle();
@@ -1222,16 +1255,18 @@ async Task findExit(){
                 await robot.turnDegrees(45, 30);
                 await robot.moveStraightTime(30, 1250, 1);
                 await robot.stop(150);
-                await robot.turnDegrees(45, 30);
+                await robot.turnDegrees(43, 30);
                 await robot.alignAngle();
                 await robot.stop(150);
                 await robot.alignAngle();
                 break;
 
             case 2:  // Parede
-                await robot.moveStraightTime(-10, 400, 1);
+                await robot.moveStraightTime(10, 1400, 1);
+                await robot.stop(150);
+                await robot.moveStraightTime(-10, 1250, 1);
                 await robot.alignAngle();
-                await robot.turnDegrees(90, 30);
+                await robot.turnDegrees(85, 30);
                 await robot.alignAngle();
                 await robot.stop(150);
                 await robot.alignAngle();
@@ -1265,9 +1300,7 @@ async Task setup()
 
 async Task debugLoop()
 {
-    await robot.alignAngle();
-    await robot.alignUltra(2, 100, 1);
-    IO.PrintLine("Ultra: " + frontUltra[0].read.ToString());
+    await getLine();
     await robot.die();
 }
 
@@ -1278,6 +1311,8 @@ async Task loop()
         await robot.stop();
         turnOnAllLeds(grayRed, grayGreen, grayBlue);
         await findExit();
+        await robot.moveStraightTime(10, 200, 1);
+        await getLine();
         gray = false;
         afterRescue = true;
     }

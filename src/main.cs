@@ -37,8 +37,6 @@ async Task loop()
         await findExit();
         await robot.moveStraightTime(10, 200, 1);
         await getLine();
-        await getLine();
-        IO.PrintLine("Saiu do loop");
         gray = false;
         afterRescue = true;
     }

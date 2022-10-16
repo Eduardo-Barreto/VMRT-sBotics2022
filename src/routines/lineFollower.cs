@@ -118,21 +118,33 @@ async Task runFloor(){
     }
 }
 
-async Task getLine(){
-    readColors(-10);
-    long timeout = timer.current + 1500;
-    while(timer.current < timeout && !leftBlack && !centerLeftBlack && !centerRightBlack && !rightBlack){
+async Task getLine(byte times = 3){
+    for(int i = 0; i < times; i++){
         readColors(-10);
-        robot.turn(10);
-        await timer.delay();
-    }
-    robot.stop();
+        long timeout = timer.current + 1500 + (300 * i);
+        while(timer.current < timeout){
+            readColors(-10);
+            robot.turn(10);
+            await timer.delay();
 
-    timeout = timer.current + 3000;
-    while(timer.current < timeout && !leftBlack && !centerLeftBlack && !centerRightBlack && !rightBlack){
-        readColors(-10);
-        robot.turn(-10);
-        await timer.delay();
+            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+                return;
+            }
+        }
+        robot.stop();
+
+        timeout = timer.current + 3000 + (300 * i);
+        while(timer.current < timeout){
+            readColors(-10);
+            robot.turn(-10);
+            await timer.delay();
+
+            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+                return;
+            }
+        }
+        robot.stop();
+        robot.moveStraightTime(10, 100);
     }
-    robot.stop();
+
 }
