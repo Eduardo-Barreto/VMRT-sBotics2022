@@ -47,6 +47,11 @@ void readColors(int offset = 0){
 
 }
 
+bool checkAnyBlack(int offset = 0){
+    int treshold = blackTreshold + offset;
+    return (lineSensors[0].light < treshold || lineSensors[1].light < treshold || lineSensors[2].light < treshold || lineSensors[3].light < treshold);
+}
+
 async Task alignLine(){
     while(leftBlack || centerLeftBlack){
         readColors();
@@ -106,11 +111,10 @@ async Task getLine(byte times = 3){
         readColors(-10);
         long timeout = timer.current + 1500 + (300 * i);
         while(timer.current < timeout){
-            readColors(-10);
             robot.turn(10);
             await timer.delay();
 
-            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+            if(checkAnyBlack(-10)){
                 return;
             }
         }
@@ -118,11 +122,10 @@ async Task getLine(byte times = 3){
 
         timeout = timer.current + 3000 + (300 * i);
         while(timer.current < timeout){
-            readColors(-10);
             robot.turn(-10);
             await timer.delay();
 
-            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+            if(checkAnyBlack(-10)){
                 return;
             }
         }
@@ -130,11 +133,10 @@ async Task getLine(byte times = 3){
 
         timeout = timer.current + 1500 + (300 * i);
         while(timer.current < timeout){
-            readColors(-10);
             robot.turn(10);
             await timer.delay();
 
-            if(leftBlack || centerLeftBlack || centerRightBlack || rightBlack){
+            if(checkAnyBlack(-10)){
                 return;
             }
         }
