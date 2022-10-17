@@ -10,22 +10,71 @@ async Task<bool> checkObstacle(){
         await robot.turnDegrees(-70, 10);
         await robot.stop(200);
         await robot.alignAngle();
-        await robot.moveStraightTime(10, 2000, 1);
+
+        // Check 90 direita
+        long timeout = timer.current + 2000;
+        while(timer.current < timeout){
+            robot.moveStraight(10);
+            await timer.delay();
+
+            if(checkAnyBlack()){
+                await robot.stop();
+                turnOnAllLeds("Vermelho");
+                await robot.moveStraightTime(15, 400, 1);
+                await robot.stop(150);
+                await robot.turnDegrees(45, 10);
+                await robot.moveStraightTime(15, 300, 1);
+                while(!centerLeftBlack && !centerRightBlack){
+                    readColors();
+                    robot.turn(10);
+                    await timer.delay();
+                }
+                await returnRoutine();
+                return true;
+            }
+        }
+
         await robot.stop(200);
         await robot.turnDegrees(-75, 10);
         await robot.stop(200);
-        turnOnAllLeds("Vermelho");
         readColors();
+        timeout = timer.current + 2000;
         while(!leftBlack && !centerLeftBlack && !centerRightBlack && !rightBlack){
             readColors();
             robot.moveStraight(10);
             await timer.delay();
+            if(timer.current > timeout){
+                turnOnAllLeds("Vermelho");
+                await robot.stop(200);
+                await robot.turnDegrees(-30, 10);
+                await robot.stop(200);
+                await robot.moveStraightTime(15, 550, 1);
+                await robot.stop(200);
+                await robot.turnDegrees(-45, 10);
+                readColors();
+                while(!centerLeftBlack && !centerRightBlack){
+                    readColors();
+                    robot.moveStraight(10);
+                    await timer.delay();
+                }
+                await robot.moveStraightTime(15, 300, 1);
+                readColors();
+                while(!centerLeftBlack && !centerRightBlack){
+                    readColors();
+                    robot.turn(10);
+                    await timer.delay();
+                }
+                await returnRoutine();
+                await robot.stop();
+                await returnRoutine();
+                return false;
+            }
         }
-        turnOnAllLeds("Azul");
+        turnOnAllLeds("Vermelho");
         await robot.moveStraightTime(10, 500, 1);
         await robot.stop(200);
         await robot.turnDegrees(50, 10, 10, true);
-        turnOnAllLeds("Vermelho");
+        readColors();
         while(!centerLeftBlack && !centerRightBlack){
             readColors();
             robot.turn(10);
